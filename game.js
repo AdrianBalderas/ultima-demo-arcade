@@ -35,6 +35,7 @@ const TEAMS = [
   { n: 'RAFA', c: 'EL ORGANIZADOR', col: 0xe1ff00, ac: 0x1b1b1b, st: 6, p: ['CAMBIO DE LOGÍSTICA', 'CRONOGRAMA', 'DE CERO A PRODUCTO'], m: ['1000'] },
   { n: 'EL DEADLINE', c: '36 HORAS', col: 0xff3b3b, ac: 0xffffff, st: 7, p: ['TIC TAC', 'ÚLTIMO COMMIT', 'DEPLOY A LAS 4AM'], m: ['0000'] },
 ];
+TEAMS.forEach(t => { t.m = t.m.map((x, i) => x + '10201'[i]); });
 const SN = ['SANTIAGO 2024', 'SANTIAGO 2025 · MUT, LAS CONDES', 'BUENOS AIRES 2026', 'CDMX 2026', 'BOGOTÁ 2026', 'CARACAS 2026', 'PLATANUS HQ', 'EL DEADLINE'];
 const ROOT = [110, 98, 123, 110, 92, 104, 130, 82];
 const PAT = [0, 0, 12, 0, 7, 0, 10, 12, 0, 0, 12, 0, 5, 7, 3, 5];
@@ -367,7 +368,7 @@ function hurt(o, d, f, fx) {
 // ---------- Dibujo de luchadores (pixel art procedural) ----------
 function pose(f) {
   if (f.ko) return 'ko';
-  if (f.win) return 'cast';
+  if (f.win) return 'win';
   if (f.hs > 0 || f.stun > 0) return 'hurt';
   if (f.atk) return f.at < f.atk.s ? 'wind' : f.at < f.atk.s + f.atk.a + .05 ? (f.atk.k === 'k' ? 'kick' : 'punch') : 'idle';
   if (f.cast > 0) return 'cast';
@@ -384,72 +385,115 @@ function lit(c) { return lerpC(c, 0xfff2c4, .3); }
 
 function drawF(g, f, X, Y, sc = 1) {
   if (f.t === 8) return drawClock(g, f, X, Y, sc);
-  const U = 5 * sc, fc = f.face, T = TEAMS[f.t], L = f.look;
+  const U = 5 * sc, fc = f.face, T = TEAMS[f.t], L = f.look, t = f.t;
   X = Math.round(X / U) * U; Y = Math.round(Y / U) * U;
-  const ps = pose(f), sk = f.fl > 0 ? 0xffffff : SK[L[0]], hc = HC[L[1]], hs = L[2], gl = L[3] || f.t === 2;
-  const sh = f.fl > 0 ? 0xffffff : T.col, pa = 0x2d3047, dk = 0x15151f, sh2 = shd(sh);
-  // sombra en el piso
+  const ps = pose(f), W8 = 0xffffff, sk = f.fl > 0 ? W8 : SK[L[0]], hc = HC[L[1]], hs = L[2];
+  const sh = f.fl > 0 ? W8 : T.col, sh2 = shd(sh), dk = 0x15151f;
+  const pa = f.fl > 0 ? W8 : lerpC(T.col, 0x1d1430, .72);
+  // complexion: 0 slim, 1 medium, 2 broad
+  const bd = L[4] === undefined ? 1 : L[4], tw = [9, 10, 12][bd], tl = -(tw >> 1), lw = bd === 2 ? 4 : 3;
+  const gl = L[3] || t === 2 || t === 6;
   if (!f.ko) { const k = Math.max(.3, 1 - (GR - f.y) / 300); g.fillStyle(0x000000, .28 * k); g.fillEllipse(X, Y + (GR - f.y) + 2, 70 * sc * k, 12 * sc * k); }
   if (f.sh > 0) { g.lineStyle(3, 0x2ecc71, .7); g.strokeCircle(X, Y - 75 * sc, 85 * sc); }
-  if (f.ctr > 0) { g.lineStyle(4, 0x75aadb, .5 + Math.sin(S.T * 20) * .3); g.strokeRect(X - 40 * sc, Y - 150 * sc, 80 * sc, 150 * sc); }
+  if (f.ctr > 0) { g.lineStyle(4, 0x75aadb, .5 + Math.sin(S.T * 20) * .3); g.strokeRect(X - 40 * sc, Y - 155 * sc, 80 * sc, 155 * sc); }
   if (f.buff > 0) { g.fillStyle(0xff7b29, .18 + Math.sin(S.T * 15) * .08); g.fillCircle(X, Y - 75 * sc, 80 * sc); }
-  // la luz viene siempre de la izquierda de la pantalla
   const dsd = fc > 0 ? 1 : -1;
   const body = (R, ol) => {
-    // B = parte con volumen: base + franja de sombra + franja de luz
+    // B = part with volume: base + hue-shifted shadow strip + light strip
     const B = (dx, dy, w, h, c) => {
       R(dx, dy, w, h, c);
       if (ol || w < 3) return;
       if (dsd > 0) R(dx + w - 1, dy, 1, h, shd(c)); else R(dx, dy, 1, h, shd(c));
       if (h > 3) R(dsd > 0 ? dx : dx + w - 2, dy, 2, 1, lit(c));
     };
-    if (ps === 'ko') { B(-14, -5, 10, 5, sh); B(-4, -5, 9, 4, pa); B(-20, -7, 6, 6, sk); R(-21, -8, 3, 7, hc); return; }
+    const shoe = (x, y, w) => { R(x, y, w, 1, sh); R(x, y + 1, w, 1, W8); };
+    if (ps === 'ko') {
+      B(-6, -4, 10, 4, pa); B(-15, -5, 9, 5, sh); B(-23, -8, 8, 8, sk); R(-24, -9, 3, 8, hc);
+      if (!ol) { R(-19, -6, 1, 1, dk); R(-17, -6, 1, 1, dk); }
+      return;
+    }
     const cr = ps === 'crouch' ? 5 : 0, ln = ps === 'hurt' || ps === 'wind' ? -1 : 0;
-    const bob = ps === 'idle' ? Math.round(Math.sin(f.anim * 4) * .6) : 0, o = cr + bob;
-    if (ps === 'jump') { B(-4, -14, 3, 6, pa); B(1, -15, 3, 6, pa); R(-4, -9, 4, 2, dk); R(1, -10, 4, 2, dk); }
-    else if (ps === 'kick') { B(-4, -10, 3, 10, pa); R(-4, -1, 4, 1, dk); B(0, -14, 11, 3, pa); R(10, -15, 2, 4, dk); }
-    else if (cr) { B(-5, -5, 4, 5, pa); B(1, -5, 4, 5, pa); R(-5, -1, 4, 1, dk); R(1, -1, 5, 1, dk); }
+    const bob = ps === 'idle' ? Math.round(Math.sin(f.anim * 4) * .6) : 0;
+    // legs: stance with legs apart
+    if (ps === 'jump') { B(-4, -14, lw, 5, pa); B(1, -15, lw, 5, pa); shoe(-4, -10, lw + 1); shoe(1, -11, lw + 1); }
+    else if (ps === 'kick') { B(-4, -10, lw, 8, pa); shoe(-5, -2, lw + 1); B(1, -14, 10, 3, pa); R(11, -15, 2, 4, sh); R(13, -15, 1, 4, W8); }
+    else if (cr) { B(-6, -5, lw + 1, 3, pa); B(2, -5, lw + 1, 3, pa); shoe(-7, -2, lw + 2); shoe(2, -2, lw + 2); }
     else {
       const s = ps === 'walk' ? Math.round(Math.sin(f.anim * 12) * 2) : 0;
-      B(-4 + s, -10, 3, 10, pa); B(1 - s, -10, 3, 10, pa); R(-4 + s, -1, 4, 1, dk); R(1 - s, -1, 4, 1, dk);
+      B(-5 + s, -10, lw, 8, pa); B(2 - s, -10, lw, 8, pa); shoe(-6 + s, -2, lw + 1); shoe(2 - s, -2, lw + 1);
     }
-    const b = o + (ps === 'jump' ? -4 : 0);
-    R(-6 + ln, -19 + b, 2, 6, sh2);
-    B(-5 + ln, -20 + b, 10, 10, sh);
-    if (!ol) { R(-1 + ln, -17 + b, 3, 3, T.ac); R(-5 + ln, -11 + b, 10, 1, dk); }
-    B(-4 + ln, -27 + b, 8, 7, sk);
+    const b = cr + bob + (ps === 'jump' ? -4 : 0), y = d => d + b, x = d => d + ln;
+    // behind the body: cape (Dominikito), tail (Little Dragons), antenna (WOKI), hood (Rafa)
+    if (t === 4) R(x(tl - 2), y(-19), 3, 15, lerpC(sh, 0x6b0f3a, .45));
+    if (t === 0) { R(x(tl - 3), y(-13), 3, 2, sh); R(x(tl - 5), y(-15), 2, 2, sh); if (!ol) R(x(tl - 6), y(-16), 1, 1, 0xffe066); }
+    if (t === 5) { R(x(tl), y(-28), 1, 8, dk); if (!ol) R(x(tl), y(-29), 1, 1, S.T % 1 < .5 ? 0xff3b3b : 0x661111); }
+    if (t === 7) R(x(-6), y(-22), 3, 3, sh2);
+    // torso: open jacket in team color with inner shirt
+    B(x(tl), y(-20), tw, 9, sh);
     if (!ol) {
-      R(2 + ln, -25 + b, 1, 1, dk); R(2 + ln, -22 + b, 2, 1, 0x7a3b2e); R(-2 + ln, -23 + b, 1, 1, lerpC(sk, 0xff6b6b, .35));
-      if (gl) { R(0 + ln, -25 + b, 5, 1, dk); R(1 + ln, -25 + b, 2, 1, f.t === 2 ? 0x66ddff : 0x444466); }
-      if (f.sil > 0) R(0 + ln, -23 + b, 5, 2, 0x000000);
+      R(x(-1), y(-20), 3, 8, t === 1 ? W8 : lerpC(T.ac, W8, .25));
+      if (t === 1) R(x(0), y(-19), 1, 6, 0xc0392b);
+      if (t === 3) { R(x(tl + 1), y(-20), 1, 9, W8); R(x(tl + tw - 2), y(-20), 1, 9, W8); }
+      if (t === 0) { R(x(tl + 1), y(-17), 1, 1, lit(sh)); R(x(tl + 2), y(-14), 1, 1, lit(sh)); }
+      if (t === 5) { R(x(tl), y(-16), tw, 1, 0xdfe6e9); R(x(tl), y(-13), tw, 1, 0xdfe6e9); }
+      if (t === 7) { R(x(-2), y(-16), 1, 1, dk); R(x(-1), y(-15), 3, 1, dk); R(x(2), y(-16), 1, 1, dk); }
+      for (let k = 0; k < tw; k++) R(x(tl + k), y(-11), 1, 1, t === 3 ? (k & 1 ? 0xff3b3b : W8) : dk);
     }
-    const H2 = (dx, dy, w, h) => R(dx + ln, dy + b, w, h, hc);
-    if (hs === 0) { H2(-4, -28, 8, 2); H2(-4, -27, 2, 3); }
-    else if (hs === 1) { H2(-5, -28, 9, 2); H2(-5, -27, 3, 9); }
-    else if (hs === 2) { H2(-6, -31, 11, 5); H2(-6, -27, 3, 4); }
-    else if (hs === 3) { H2(-4, -28, 8, 2); H2(-4, -27, 2, 2); H2(-7, -27, 3, 2); H2(-8, -26, 2, 5); }
-    else { R(-4 + ln, -29 + b, 8, 2, sh2); R(2 + ln, -28 + b, 5, 1, sh2); H2(-4, -27, 1, 2); }
-    if (!ol && hs !== 4) R(-2 + ln, (hs === 2 ? -30 : -28) + b, 3, 1, lit(hc));
-    if (f.t === 7 && !ol) { R(-5 + ln, -26 + b, 1, 4, dk); R(-5 + ln, -23 + b, 5, 1, dk); R(0 + ln, -23 + b, 1, 1, 0xff3b3b); }
-    if (ps === 'punch') { R(-1 + ln, -19 + b, 9, 2, sh); R(8, -19 + b, 2, 3, sk); }
-    else if (ps === 'cast') { R(-1, -19 + b, 8, 2, sh); R(7, -20 + b, 2, 4, sk); }
-    else if (ps === 'block') { R(3, -26 + b, 2, 8, sk); R(2, -19 + b, 3, 2, sh); }
-    else if (ps === 'hurt') R(-7 + ln, -21 + b, 2, 6, sh);
-    else if (ps === 'wind') { R(-9, -20 + b, 5, 2, sh); R(-10, -20 + b, 2, 2, sk); }
-    else { const a = ps === 'walk' ? Math.round(Math.sin(f.anim * 12)) : 0; R(3 + ln + a, -19 + b, 2, 6, sh); R(3 + ln + a, -13 + b, 2, 2, sk); }
+    // head with ear
+    B(x(-4), y(-29), 9, 9, sk);
+    if (!ol) {
+      R(x(-2), y(-25), 1, 2, shd(sk));
+      const hurt = ps === 'hurt', mad = ps === 'punch' || ps === 'kick' || ps === 'cast' || ps === 'wind';
+      if (hurt) { R(x(0), y(-24), 2, 1, dk); R(x(3), y(-24), 2, 1, dk); R(x(3), y(-22), 2, 2, 0x5a1f1f); }
+      else {
+        R(x(0), y(-25), 2, 2, W8); R(x(3), y(-25), 2, 2, W8); R(x(1), y(-25), 1, 2, dk); R(x(4), y(-25), 1, 2, dk);
+        if (mad) { R(x(0), y(-27), 1, 1, hc); R(x(1), y(-26), 1, 1, hc); R(x(3), y(-26), 1, 1, hc); R(x(4), y(-27), 1, 1, hc); }
+        else { R(x(0), y(-27), 2, 1, hc); R(x(3), y(-27), 2, 1, hc); }
+        R(x(ps === 'win' ? 2 : 3), y(-22), ps === 'win' ? 3 : 2, 1, 0x7a3b2e);
+      }
+      R(x(-1), y(-23), 1, 1, lerpC(sk, 0xff6b6b, .4));
+      if (gl && !hurt) {
+        R(x(-1), y(-26), 7, 1, dk);
+        const l1 = t === 6 ? 0xff3355 : t === 2 ? 0x66ddff : 0x9fb4c8, l2 = t === 6 ? 0x33e0ff : l1;
+        R(x(0), y(-25), 2, 1, l1); R(x(3), y(-25), 2, 1, l2);
+      }
+      if (t === 2) { R(x(-2), y(-24), 1, 2, 0x00b4e6); if ((S.T * 3 | 0) % 4 === 0) R(x(-4), y(-29 + ((S.T * 30) | 0) % 9), 9, 1, 0x66ddff); }
+      if (f.sil > 0) R(x(2), y(-23), 4, 2, 0x000000);
+    }
+    // hair
+    const H2 = (dx, dy, w, h) => R(x(dx), y(dy), w, h, hc);
+    if (hs === 0) { H2(-4, -30, 9, 2); H2(-4, -28, 2, 3); }
+    else if (hs === 1) { H2(-5, -30, 10, 2); H2(-5, -28, 3, 10); }
+    else if (hs === 2) { H2(-6, -33, 12, 5); H2(-6, -28, 3, 4); }
+    else if (hs === 3) { H2(-4, -30, 9, 2); H2(-4, -28, 2, 2); H2(-7, -29, 3, 2); H2(-8, -28, 2, 6); }
+    else { R(x(-4), y(-31), 9, 2, sh2); R(x(3), y(-30), 4, 1, sh2); H2(-4, -29, 2, 2); }
+    if (!ol && hs !== 4) R(x(-1), y(hs === 2 ? -33 : -30), 3, 1, lit(hc));
+    // team signature accessory
+    if (t === 0) { R(x(-2), y(-32 - (hs === 2 ? 2 : 0)), 2, 2, 0xfff1c1); R(x(2), y(-32 - (hs === 2 ? 2 : 0)), 2, 2, 0xfff1c1); }
+    if (t === 1) { H2(-7, -30, 3, 2); H2(-8, -28, 3, 2); H2(-7, -26, 2, 2); }
+    if (t === 5) { R(x(-5), y(-32), 11, 3, 0xf5c400); R(x(-4), y(-33), 9, 1, 0xf5c400); R(x(4), y(-30), 3, 1, 0xc99a00); }
+    if (t === 6) { R(x(-5), y(-32), 10, 2, 0x5b2c6f); R(x(-1), y(-33), 2, 1, 0x5b2c6f); }
+    if (t === 7 && !ol) { R(x(-5), y(-27), 1, 4, dk); R(x(-5), y(-23), 6, 1, dk); R(x(1), y(-23), 1, 1, 0xff3b3b); }
+    // arms: always on guard, fists up
+    const guard = () => { R(x(1), y(-16), 3, 2, sh2); R(x(4), y(-17), 2, 2, sk); R(x(3), y(-19), 3, 2, sh); R(x(5), y(-22), 2, 4, sh); R(x(5), y(-24), 2, 2, sk); };
+    if (ps === 'punch') { R(x(1), y(-16), 3, 2, sh2); R(x(4), y(-17), 2, 2, sk); R(1, y(-20), 9, 2, sh); R(10, y(-21), 3, 3, sk); }
+    else if (ps === 'cast') { R(1, y(-20), 8, 2, sh); R(9, y(-21), 2, 3, sk); R(1, y(-17), 7, 2, sh2); R(8, y(-18), 2, 2, sk); }
+    else if (ps === 'win') { R(x(1), y(-16), 3, 2, sh2); R(x(4), y(-17), 2, 2, sk); R(3, y(-27), 2, 8, sh); R(3, y(-30), 2, 3, sk); }
+    else if (ps === 'block') { R(4, y(-27), 2, 8, sh); R(4, y(-28), 2, 2, sk); R(6, y(-25), 2, 6, sh2); }
+    else if (ps === 'hurt') { R(x(-7), y(-21), 2, 5, sh); R(x(-8), y(-23), 2, 2, sk); }
+    else if (ps === 'wind') { R(x(1), y(-16), 3, 2, sh2); R(-7, y(-19), 5, 2, sh); R(-9, y(-20), 2, 3, sk); }
+    else guard();
   };
-  // pasada 1: contorno (morado muy oscuro, no negro puro); pasada 2: colores
-  const OC = f.fl > 0 ? 0xffffff : 0x1d1430;
+  // pass 1: very dark purple outline (not pure black); pass 2: colors (green while turning into code)
+  const OC = f.fl > 0 ? W8 : f.mx > 0 ? 0x003b1a : 0x1d1430;
   const gone = (dx, dy) => f.mx > .25 && ((dx * 7 + dy * 13 + ((S.T * 14) | 0)) & 7) / 8 < (f.mx - .25) * 1.4;
   body((dx, dy, w, h) => { if (w * h > 2 && !gone(dx, dy)) { g.fillStyle(OC); g.fillRect(X + (fc > 0 ? dx - 1 : -dx - w - 1) * U, Y + (dy - 1) * U, (w + 2) * U, (h + 2) * U); } }, 1);
   body((dx, dy, w, h, c) => { if (gone(dx, dy)) return; g.fillStyle(f.mx > 0 ? lerpC(c, 0x00ff66, Math.min(1, f.mx * 1.6)) : c); g.fillRect(X + (fc > 0 ? dx : -dx - w) * U, Y + dy * U, w * U, h * U); }, 0);
-  // estela del golpe (smear) y brillo del poder
-  if (ps === 'punch') { g.fillStyle(0xffffff, .45); g.fillRect(X + (fc > 0 ? 2 : -10) * U, Y - 19 * U, 8 * U, 2 * U); }
-  if (ps === 'cast') { g.fillStyle(T.col, .5); g.fillCircle(X + fc * 11 * U, Y - 18 * U, 4 * U); }
-  if (f.stun > 0) for (let k = 0; k < 3; k++) { g.fillStyle(0xffe066); g.fillRect(X + Math.cos(S.T * 6 + k * 2.1) * 22 * sc - 3, Y - 155 * sc + Math.sin(S.T * 6 + k * 2.1) * 6, 6, 6); }
-  if (f.inv > 0) { g.fillStyle(0xc39bd3); g.fillRect(X - 3, Y - 170 * sc + Math.sin(S.T * 8) * 4, 6, 10); }
+  if (ps === 'punch') { g.fillStyle(W8, .45); g.fillRect(X + (fc > 0 ? 2 : -11) * U, Y - 20 * U, 9 * U, 2 * U); }
+  if (ps === 'cast') { g.fillStyle(T.col, .5); g.fillCircle(X + fc * 12 * U, Y - 19 * U, 4 * U); }
+  if (f.stun > 0) for (let k = 0; k < 3; k++) { g.fillStyle(0xffe066); g.fillRect(X + Math.cos(S.T * 6 + k * 2.1) * 22 * sc - 3, Y - 175 * sc + Math.sin(S.T * 6 + k * 2.1) * 6, 6, 6); }
+  if (f.inv > 0) { g.fillStyle(0xc39bd3); g.fillRect(X - 3, Y - 190 * sc + Math.sin(S.T * 8) * 4, 6, 10); }
 }
-
 
 // ---------- Efecto "se vuelve código": el luchador vencido se deshace en una lluvia de 0 y 1 ----------
 function glyph(g, x, y, one) {
@@ -650,7 +694,7 @@ function initTitle() {
 }
 function updTitle(dt) {
   S.g.clear();
-  S.demo.forEach((f, j) => { f.anim += dt; drawF(S.g, f, 85 + j * 105, 560, .95); });
+  S.demo.forEach((f, j) => { f.anim += dt; drawF(S.g, f, 85 + j * 105, 585, .9); });
   S.b1.setAlpha(S.T % 1 < .6 ? 1 : .4);
   if (pr('START1')) { snd('ok'); S.np = 1; go('sel'); }
   else if (pr('START2')) { snd('ok'); S.np = 2; go('sel'); }
