@@ -38,8 +38,8 @@ const TEAMS = [
 ];
 TEAMS.forEach(t => { t.m = t.m.map((x, i) => x + '10201'[i]); });
 const SELT = [0, 1, 2, 3, 4, 5, 6, 9], isTeam = t => t < 7 || t === 9;
-const SN = ['SANTIAGO 2024', 'SANTIAGO 2025 · MUT, LAS CONDES', 'BUENOS AIRES 2026', 'CDMX 2026', 'BOGOTÁ 2026', 'CARACAS 2026', 'PLATANUS HQ', 'EL DEADLINE'];
-const ROOT = [110, 98, 123, 110, 92, 104, 130, 82];
+const SN = ['SANTIAGO 2024', 'SANTIAGO 2025 · MUT, LAS CONDES', 'BUENOS AIRES 2026', 'CDMX 2026', 'BOGOTÁ 2026', 'CARACAS 2026', 'PLATANUS HQ', 'EL DEADLINE', 'SAN FRANCISCO · EL DESTINO'];
+const ROOT = [110, 98, 123, 110, 92, 104, 130, 82, 98];
 const PAT = [0, 0, 12, 0, 7, 0, 10, 12, 0, 0, 12, 0, 5, 7, 3, 5];
 const PUNCH = { k: 'p', s: .05, a: .08, r: .14, rng: 70, d: 5, y: -108 };
 const KICK = { k: 'k', s: .09, a: .1, r: .22, rng: 95, d: 8, y: -68 };
@@ -615,7 +615,25 @@ function ground(g, c, line) { g.fillStyle(c); g.fillRect(0, GR, W, H - GR); g.fi
 function snow(g, pk) { g.fillStyle(0xffffff); for (let i = 0; i < pk.length; i += 2) g.fillTriangle(pk[i], pk[i + 1], pk[i] - 26, pk[i + 1] + 28, pk[i] + 26, pk[i + 1] + 28); }
 function tower(g, x, c, win) { g.fillStyle(c); g.fillRect(x, 150, 40, 290); g.fillTriangle(x, 150, x + 40, 150, x + 20, 115); g.fillStyle(win); for (let y = 160; y < 430; y += 12) g.fillRect(x + 4, y, 32, 3); }
 
+
+// ---------- Edition motifs: each tour stop had its symbol; here they are drawn as a yellow neon hologram ----------
+function motif(g, id) {
+  const [x, y] = [[370, 175], [170, 150], [620, 150], [170, 178], [620, 182], [300, 105]][id];
+  for (const [w, a] of [[7, .14], [2, .75]]) {
+    g.lineStyle(w, 0xf2ff00, a);
+    if (id < 2) { g.beginPath(); g.arc(x, y, 40, Math.PI, 0, false); g.strokePath(); g.strokeRect(x - 52, y, 104, 14); g.strokeRect(x - 6, y - 39, 12, 39); for (let i = -2; i <= 2; i++) if (i) g.lineBetween(x + i * 15, y, x + i * 9, y - 30); }
+    else if (id === 2) { g.strokeCircle(x, y, 32); g.strokeEllipse(x, y - 26, 44, 10); g.lineBetween(x + 6, y - 26, x + 30, y - 82); g.strokeEllipse(x, y + 30, 30, 8); }
+    else if (id === 3) { g.strokeCircle(x, y - 10, 34); g.strokeRect(x - 18, y + 18, 36, 18); g.strokeCircle(x - 13, y - 8, 9); g.strokeCircle(x + 13, y - 8, 9); g.strokeTriangle(x, y + 2, x - 5, y + 12, x + 5, y + 12); for (let i = 0; i < 4; i++) g.lineBetween(x - 12 + i * 8, y + 18, x - 12 + i * 8, y + 36); }
+    else if (id === 4) { g.strokeRect(x - 60, y - 30, 120, 50); g.strokeRect(x - 56, y - 42, 112, 12); for (let i = 0; i < 5; i++) g.strokeRect(x - 52 + i * 22, y - 24, 16, 16); g.strokeCircle(x - 36, y + 24, 10); g.strokeCircle(x + 36, y + 24, 10); g.strokeRect(x + 60, y - 12, 14, 32); }
+    else { g.strokeCircle(x, y - 30, 14); g.strokeTriangle(x + 12, y - 34, x + 22, y - 26, x + 10, y - 22); g.strokeEllipse(x - 4, y + 6, 30, 52); g.lineBetween(x - 14, y - 6, x - 6, y + 26); g.lineBetween(x - 10, y + 30, x - 26, y + 82); g.lineBetween(x - 2, y + 30, x - 14, y + 86); g.lineBetween(x - 42, y + 32, x + 42, y + 28); }
+  }
+}
+
 function drawStage(g, id) {
+  drawStageBase(g, id);
+  if (id < 6) motif(g, id);
+}
+function drawStageBase(g, id) {
   const AND = [0, 330, 90, 190, 170, 260, 260, 150, 370, 250, 470, 170, 580, 260, 680, 180, 800, 280, 800, 440, 0, 440];
   const PK = [90, 190, 260, 150, 470, 170, 680, 180];
   if (id === 0) {
@@ -665,6 +683,16 @@ function drawStage(g, id) {
     g.fillStyle(0x0b0d05); g.fillRect(590, 110, 170, 70); g.lineStyle(3, 0xe1ff00); g.strokeRect(590, 110, 170, 70);
     g.fillStyle(0x3b3f1e); for (const x of [60, 560]) { g.fillRect(x, 440, 180, 14); g.fillRect(x + 10, 454, 8, 66); g.fillRect(x + 160, 454, 8, 66); g.fillStyle(0x95a5a6); g.fillRect(x + 30, 424, 40, 16); g.fillRect(x + 110, 424, 40, 16); g.fillStyle(0x3b3f1e); }
     ground(g, 0x2a2d12, 0xe1ff00);
+  } else if (id === 8) {
+    sky(g, 0xff9a76, 0xffe1c6); g.fillStyle(0xfff0b3); g.fillCircle(640, 300, 46);
+    mtn(g, [520, 400, 640, 300, 800, 330, 800, 400], 0x5b6b4a);
+    g.fillStyle(0x2c5f7c); g.fillRect(0, 380, W, 140); g.fillStyle(0x4f86a6); for (let x = 0; x < W; x += 60) g.fillRect(x + (x % 120 ? 20 : 0), 420 + (x % 7) * 8, 34, 3);
+    const RC = 0xc0362c; g.lineStyle(3, RC);
+    for (let i = 0; i < 40; i++) { const f = u => u < 230 ? 120 + (230 - u) * .55 : u > 570 ? 120 + (u - 570) * .55 : 120 + 180 * (1 - Math.pow((u - 400) / 170, 2)); const a = i * 20, b = a + 20; g.lineBetween(a, f(a), b, f(b)); if (i % 2) g.lineBetween(a, f(a), a, 330); }
+    g.fillStyle(RC); g.fillRect(0, 330, W, 14);
+    for (const x of [230, 570]) { g.fillRect(x - 12, 110, 24, 290); for (const y of [140, 210, 280]) g.fillRect(x - 18, y, 36, 8); }
+    g.fillStyle(0xffffff, .35); for (const [x, y] of [[150, 360], [330, 372], [520, 356], [700, 368]]) g.fillEllipse(x, y, 260, 34);
+    ground(g, 0x6b5b4b, 0x8d7b68);
   } else {
     g.fillStyle(0x14040a); g.fillRect(0, 0, W, H); g.lineStyle(1, 0xff3b3b, .15);
     for (let x = 0; x < W; x += 40) g.lineBetween(x, 0, x, GR); for (let y = 0; y < GR; y += 40) g.lineBetween(0, y, W, y);
@@ -798,7 +826,7 @@ function updSel(dt) {
       if (S.np === 2) {
         const b = S.sel[1];
         S.F = [mkF(0, a.t, a.lk, a.name, 0), mkF(1, b.t, b.lk, b.name, 0)];
-        S.stage = TEAMS[Math.random() < .5 ? a.t : b.t].st; S.lv = 0;
+        S.stage = Math.random() < .5 ? TEAMS[Math.random() < .5 ? a.t : b.t].st : [0, 1, 2, 3, 4, 5, 6, 8][Math.random() * 8 | 0]; S.lv = 0;
         go('vs');
       } else {
         S.lad = SELT.filter(x => x !== a.t).sort(() => Math.random() - .5).slice(0, 3).concat([7, 8]);
@@ -1038,7 +1066,7 @@ function initRes(w) {
   tx(W / 2, 520, 'START · REVANCHA      BOTÓN 6 · CAMBIAR EQUIPOS', 16, '#ffffff');
 }
 function updRes(dt) {
-  S.g.clear(); S.w.anim += dt; drawF(S.g, S.w, W / 2, 450, 2);
+  S.g.clear(); S.w.anim += dt; drawF(S.g, S.w, W / 2, 470, 1.5);
   if (pr('START1') || pr('START2')) { S.F.forEach(f => { f.wins = 0; }); go('vs'); }
   else if (pr('P1_6') || pr('P2_6')) go('sel');
 }
@@ -1058,13 +1086,13 @@ function updOver() {
   else if (n < 0) go('title');
 }
 function initEnd() {
-  drawStage(S.bg, 6);
+  drawStage(S.bg, 6); S.bg.fillStyle(0x000000, .55); S.bg.fillRect(0, 0, W, H);
   S.fl = 1.2; snd('ko');
-  tx(W / 2, 250, '¡FOTO CON EL EQUIPO PLATANUS!', 32, '#e1ff00');
-  tx(W / 2, 292, 'CAMPEÓN: ' + S.hum.name + ' · TEAM ' + TEAMS[S.hum.t].n, 18, '#ffffff');
+  tx(W / 2, 190, '¡FOTO CON EL EQUIPO PLATANUS!', 32, '#e1ff00');
+  tx(W / 2, 224, 'CAMPEÓN: ' + S.hum.name + ' · TEAM ' + TEAMS[S.hum.t].n, 18, '#ffffff');
   const c = S.ch, e = c[2] === 1 ? ['FINAL: LA DEMO LOCAL', 'LA DEMO CORRIÓ EN TU LAPTOP... HASTA QUE SE APAGÓ.\nGANASTE IGUAL. PRÓXIMA VEZ: DEPLOY TEMPRANO.'] : c[0] === 0 ? ['FINAL: EL PITCH PERFECTO', 'DURMIERON, HICIERON DEPLOY Y LA DEMO CORRIÓ EN VIVO.\nEL JURADO PIDIÓ EL LINK.'] : ['FINAL: PRODUCTO EN VIVO, OJERAS EN VIVO', 'LA DEMO FUNCIONÓ EN PRODUCCIÓN.\nNADIE RECUERDA EL PITCH, TODOS RECUERDAN LAS OJERAS.'];
-  tx(W / 2, 336, e[0], 17, '#ff6ec7');
-  tx(W / 2, 384, e[1] + '\n' + (c[1] === 0 ? 'EL PIVOTE SALIÓ BIEN.' : 'DEFENDISTE LA IDEA HASTA EL FINAL.'), 13, '#f7ffd8');
+  tx(W / 2, 260, e[0], 17, '#ff6ec7');
+  tx(W / 2, 302, e[1] + '\n' + (c[1] === 0 ? 'EL PIVOTE SALIÓ BIEN.' : 'DEFENDISTE LA IDEA HASTA EL FINAL.'), 13, '#f7ffd8');
   tx(W / 2, 580, 'START · VOLVER AL INICIO', 14, '#b8c48d');
   S.ach.e |= 1 << (c[2] === 1 ? 2 : c[0] === 0 ? 0 : 1);
   unlock(4); if (c[0] === 1) unlock(5); if (S.ach.e === 7) unlock(6);
