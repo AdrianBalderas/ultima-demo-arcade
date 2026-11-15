@@ -598,8 +598,6 @@ function sky(g, a, b) {
     g.fillStyle(lerpC(a, b, i / 7)); g.fillRect(0, y, W, 65);
     if (i < 7) { g.fillStyle(lerpC(a, b, (i + 1) / 7)); for (let x = 0; x < W; x += 8) { g.fillRect(x, y + 57, 4, 4); g.fillRect(x + 4, y + 61, 4, 4); } }
   }
-  const m = [[400, 215, 3.2], [400, 215, 3.2], [560, 215, 2.6], [400, 200, 2.6], [560, 200, 2.4], [430, 185, 2.4]][S.mid];
-  if (m) { g.save(); g.translateCanvas(m[0], m[1]); g.scaleCanvas(m[2], m[2]); motif(g, S.mid); g.restore(); }
 }
 function mtn(g, a, c) { g.fillStyle(c); g.fillPoints(P(a), true); }
 let seed = 1;
@@ -618,24 +616,7 @@ function snow(g, pk) { g.fillStyle(0xffffff); for (let i = 0; i < pk.length; i +
 function tower(g, x, c, win) { g.fillStyle(c); g.fillRect(x, 150, 40, 290); g.fillTriangle(x, 150, x + 40, 150, x + 20, 115); g.fillStyle(win); for (let y = 160; y < 430; y += 12) g.fillRect(x + 4, y, 32, 3); }
 
 
-// ---------- Edition motifs: each tour stop had its symbol; here they are drawn as a yellow neon hologram ----------
-function motif(g, id) {
-  const x = 0, y = 0;
-  for (const [w, a] of [[3, .12], [1, .55]]) {
-    g.lineStyle(w, 0xf2ff00, a);
-    if (id < 2) { g.beginPath(); g.arc(x, y, 40, Math.PI, 0, false); g.strokePath(); g.strokeRect(x - 52, y, 104, 14); g.strokeRect(x - 6, y - 39, 12, 39); for (let i = -2; i <= 2; i++) if (i) g.lineBetween(x + i * 15, y, x + i * 9, y - 30); }
-    else if (id === 2) { g.strokeCircle(x, y, 32); g.strokeEllipse(x, y - 26, 44, 10); g.lineBetween(x + 6, y - 26, x + 30, y - 82); g.strokeEllipse(x, y + 30, 30, 8); }
-    else if (id === 3) { g.strokeCircle(x, y - 10, 34); g.strokeRect(x - 18, y + 18, 36, 18); g.strokeCircle(x - 13, y - 8, 9); g.strokeCircle(x + 13, y - 8, 9); g.strokeTriangle(x, y + 2, x - 5, y + 12, x + 5, y + 12); for (let i = 0; i < 4; i++) g.lineBetween(x - 12 + i * 8, y + 18, x - 12 + i * 8, y + 36); }
-    else if (id === 4) { g.strokeRect(x - 60, y - 30, 120, 50); g.strokeRect(x - 56, y - 42, 112, 12); for (let i = 0; i < 5; i++) g.strokeRect(x - 52 + i * 22, y - 24, 16, 16); g.strokeCircle(x - 36, y + 24, 10); g.strokeCircle(x + 36, y + 24, 10); g.strokeRect(x + 60, y - 12, 14, 32); }
-    else { g.strokeCircle(x, y - 30, 14); g.strokeTriangle(x + 12, y - 34, x + 22, y - 26, x + 10, y - 22); g.strokeEllipse(x - 4, y + 6, 30, 52); g.lineBetween(x - 14, y - 6, x - 6, y + 26); g.lineBetween(x - 10, y + 30, x - 26, y + 82); g.lineBetween(x - 2, y + 30, x - 14, y + 86); g.lineBetween(x - 42, y + 32, x + 42, y + 28); }
-  }
-}
-
 function drawStage(g, id) {
-  S.mid = id;
-  drawStageBase(g, id);
-}
-function drawStageBase(g, id) {
   const AND = [0, 330, 90, 190, 170, 260, 260, 150, 370, 250, 470, 170, 580, 260, 680, 180, 800, 280, 800, 440, 0, 440];
   const PK = [90, 190, 260, 150, 470, 170, 680, 180];
   if (id === 0) {
