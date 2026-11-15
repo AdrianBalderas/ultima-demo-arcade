@@ -41,7 +41,7 @@ const PAT = [0, 0, 12, 0, 7, 0, 10, 12, 0, 0, 12, 0, 5, 7, 3, 5];
 const PUNCH = { k: 'p', s: .05, a: .08, r: .14, rng: 70, d: 5, y: -108 };
 const KICK = { k: 'k', s: .09, a: .1, r: .22, rng: 95, d: 8, y: -68 };
 
-const S = { ui: [], names: ['', ''], tw: {}, T: 0, pr: [], pa: [], walls: [], tm: [] };
+const S = { ui: [], names: ['', ''], tw: {}, T: 0, pr: [], pa: [], walls: [], tm: [], imp: [], hst: 0 };
 const ST = window.platanusArcadeStorage;
 
 new Phaser.Game({
@@ -317,7 +317,7 @@ function hurt(o, d, f, fx) {
     if (fx.slow) o.slow = fx.slow;
     if (fx.drain) o.m = Math.max(0, o.m - fx.drain);
     if (fx.time) { S.time = Math.max(1, S.time - fx.time); flt(o, '-3 SEG', '#e1ff00'); }
-    spark(o.x, o.y - 95, 0xffe066); snd('hit');
+    spark(o.x, o.y - 95, 0xffe066); snd('hit'); S.hst = d >= 12 ? .12 : .06; S.imp.push({ x: o.x - dir * 18, y: o.y - 100, l: .12, s: d >= 12 ? 1.6 : 1 });
     if (d >= 12) S.sc.cameras.main.shake(120, .006);
   }
   o.hp = Math.max(0, o.hp - d);
@@ -334,7 +334,7 @@ function pose(f) {
   if (f.ko) return 'ko';
   if (f.win) return 'cast';
   if (f.hs > 0 || f.stun > 0) return 'hurt';
-  if (f.atk) return f.at >= f.atk.s && f.at < f.atk.s + f.atk.a + .05 ? (f.atk.k === 'k' ? 'kick' : 'punch') : 'idle';
+  if (f.atk) return f.at < f.atk.s ? 'wind' : f.at < f.atk.s + f.atk.a + .05 ? (f.atk.k === 'k' ? 'kick' : 'punch') : 'idle';
   if (f.cast > 0) return 'cast';
   if (!f.gr) return 'jump';
   if (f.cr) return 'crouch';
@@ -343,53 +343,75 @@ function pose(f) {
   return 'idle';
 }
 
+// Sombra con cambio de tono (mas oscura y fria) y luz (mas clara y calida)
+function shd(c) { return lerpC(lerpC(c, 0x2a1b4a, .35), 0, .15); }
+function lit(c) { return lerpC(c, 0xfff2c4, .3); }
+
 function drawF(g, f, X, Y, sc = 1) {
   if (f.t === 8) return drawClock(g, f, X, Y, sc);
   const U = 5 * sc, fc = f.face, T = TEAMS[f.t], L = f.look;
-  const R = (dx, dy, w, h, c) => { g.fillStyle(c); g.fillRect(X + (fc > 0 ? dx : -dx - w) * U, Y + dy * U, w * U, h * U); };
+  X = Math.round(X / U) * U; Y = Math.round(Y / U) * U;
   const ps = pose(f), sk = f.fl > 0 ? 0xffffff : SK[L[0]], hc = HC[L[1]], hs = L[2], gl = L[3] || f.t === 2;
-  const sh = f.fl > 0 ? 0xffffff : T.col, pa = 0x2d3047, dk = 0x15151f, sh2 = lerpC(sh, 0, .3);
-  // efectos
+  const sh = f.fl > 0 ? 0xffffff : T.col, pa = 0x2d3047, dk = 0x15151f, sh2 = shd(sh);
+  // sombra en el piso
+  if (!f.ko) { const k = Math.max(.3, 1 - (GR - f.y) / 300); g.fillStyle(0x000000, .28 * k); g.fillEllipse(X, Y + (GR - f.y) + 2, 70 * sc * k, 12 * sc * k); }
   if (f.sh > 0) { g.lineStyle(3, 0x2ecc71, .7); g.strokeCircle(X, Y - 75 * sc, 85 * sc); }
   if (f.ctr > 0) { g.lineStyle(4, 0x75aadb, .5 + Math.sin(S.T * 20) * .3); g.strokeRect(X - 40 * sc, Y - 150 * sc, 80 * sc, 150 * sc); }
   if (f.buff > 0) { g.fillStyle(0xff7b29, .18 + Math.sin(S.T * 15) * .08); g.fillCircle(X, Y - 75 * sc, 80 * sc); }
-  if (ps === 'ko') {
-    R(-14, -5, 10, 5, sh); R(-4, -5, 9, 4, pa); R(-20, -7, 6, 6, sk); R(-21, -8, 3, 7, hc);
-    return;
-  }
-  const cr = ps === 'crouch' ? 5 : 0, ln = ps === 'hurt' ? -1 : 0;
-  const bob = ps === 'idle' ? Math.round(Math.sin(f.anim * 4) * .6) : 0, o = cr + bob;
-  // piernas
-  if (ps === 'jump') { R(-4, -14, 3, 6, pa); R(1, -15, 3, 6, pa); R(-4, -9, 4, 2, dk); R(1, -10, 4, 2, dk); }
-  else if (ps === 'kick') { R(-4, -10, 3, 10, pa); R(-4, -1, 4, 1, dk); R(0, -14, 11, 3, pa); R(10, -15, 2, 4, dk); }
-  else if (cr) { R(-5, -5, 4, 5, pa); R(1, -5, 4, 5, pa); R(-5, -1, 4, 1, dk); R(1, -1, 5, 1, dk); }
-  else {
-    const s = ps === 'walk' ? Math.round(Math.sin(f.anim * 12) * 2) : 0;
-    R(-4 + s, -10, 3, 10, pa); R(1 - s, -10, 3, 10, pa); R(-4 + s, -1, 4, 1, dk); R(1 - s, -1, 4, 1, dk);
-  }
-  const yo = ps === 'jump' ? -4 : 0, b = o + yo;
-  R(-6 + ln, -19 + b, 2, 6, sh2); // brazo de atras
-  R(-5 + ln, -20 + b, 10, 10, sh); R(-1 + ln, -17 + b, 3, 3, T.ac); R(-5 + ln, -11 + b, 10, 1, dk);
-  R(-4 + ln, -27 + b, 8, 7, sk); R(2 + ln, -25 + b, 1, 1, dk); R(2 + ln, -22 + b, 2, 1, 0x7a3b2e);
-  if (gl) { R(0 + ln, -25 + b, 5, 1, dk); R(1 + ln, -25 + b, 2, 1, f.t === 2 ? 0x66ddff : 0x444466); }
-  if (f.sil > 0) R(0 + ln, -23 + b, 5, 2, 0x000000);
-  // pelo
-  const H2 = (dx, dy, w, h) => R(dx + ln, dy + b, w, h, hc);
-  if (hs === 0) { H2(-4, -28, 8, 2); H2(-4, -27, 2, 3); }
-  else if (hs === 1) { H2(-5, -28, 9, 2); H2(-5, -27, 3, 9); }
-  else if (hs === 2) { H2(-6, -31, 11, 5); H2(-6, -27, 3, 4); }
-  else if (hs === 3) { H2(-4, -28, 8, 2); H2(-4, -27, 2, 2); H2(-7, -27, 3, 2); H2(-8, -26, 2, 5); }
-  else { R(-4 + ln, -29 + b, 8, 2, sh2); R(2 + ln, -28 + b, 5, 1, sh2); H2(-4, -27, 1, 2); }
-  if (f.t === 7) { R(-5 + ln, -26 + b, 1, 4, dk); R(-5 + ln, -23 + b, 5, 1, dk); R(0 + ln, -23 + b, 1, 1, 0xff3b3b); }
-  // brazo de adelante
-  if (ps === 'punch') { R(-1 + ln, -19 + b, 9, 2, sh); R(8, -19 + b, 2, 3, sk); }
-  else if (ps === 'cast') { R(-1, -19 + b, 8, 2, sh); R(7, -20 + b, 2, 4, sk); g.fillStyle(T.col, .5); g.fillCircle(X + fc * 11 * U, Y + (-18 + b) * U, 4 * U); }
-  else if (ps === 'block') { R(3, -26 + b, 2, 8, sk); R(2, -19 + b, 3, 2, sh); }
-  else if (ps === 'hurt') R(-7 + ln, -21 + b, 2, 6, sh);
-  else { const a = ps === 'walk' ? Math.round(Math.sin(f.anim * 12)) : 0; R(3 + ln + a, -19 + b, 2, 6, sh); R(3 + ln + a, -13 + b, 2, 2, sk); }
-  // estados
-  if (f.stun > 0) for (let k = 0; k < 3; k++) { g.fillStyle(0xffe066); g.fillRect(X + Math.cos(S.T * 6 + k * 2.1) * 22 * sc - 3, Y - 150 * sc + Math.sin(S.T * 6 + k * 2.1) * 6, 6, 6); }
-  if (f.inv > 0) { g.fillStyle(0xc39bd3); g.fillRect(X - 3, Y - 165 * sc + Math.sin(S.T * 8) * 4, 6, 10); }
+  // la luz viene siempre de la izquierda de la pantalla
+  const dsd = fc > 0 ? 1 : -1;
+  const body = (R, ol) => {
+    // B = parte con volumen: base + franja de sombra + franja de luz
+    const B = (dx, dy, w, h, c) => {
+      R(dx, dy, w, h, c);
+      if (ol || w < 3) return;
+      if (dsd > 0) R(dx + w - 1, dy, 1, h, shd(c)); else R(dx, dy, 1, h, shd(c));
+      if (h > 3) R(dsd > 0 ? dx : dx + w - 2, dy, 2, 1, lit(c));
+    };
+    if (ps === 'ko') { B(-14, -5, 10, 5, sh); B(-4, -5, 9, 4, pa); B(-20, -7, 6, 6, sk); R(-21, -8, 3, 7, hc); return; }
+    const cr = ps === 'crouch' ? 5 : 0, ln = ps === 'hurt' || ps === 'wind' ? -1 : 0;
+    const bob = ps === 'idle' ? Math.round(Math.sin(f.anim * 4) * .6) : 0, o = cr + bob;
+    if (ps === 'jump') { B(-4, -14, 3, 6, pa); B(1, -15, 3, 6, pa); R(-4, -9, 4, 2, dk); R(1, -10, 4, 2, dk); }
+    else if (ps === 'kick') { B(-4, -10, 3, 10, pa); R(-4, -1, 4, 1, dk); B(0, -14, 11, 3, pa); R(10, -15, 2, 4, dk); }
+    else if (cr) { B(-5, -5, 4, 5, pa); B(1, -5, 4, 5, pa); R(-5, -1, 4, 1, dk); R(1, -1, 5, 1, dk); }
+    else {
+      const s = ps === 'walk' ? Math.round(Math.sin(f.anim * 12) * 2) : 0;
+      B(-4 + s, -10, 3, 10, pa); B(1 - s, -10, 3, 10, pa); R(-4 + s, -1, 4, 1, dk); R(1 - s, -1, 4, 1, dk);
+    }
+    const b = o + (ps === 'jump' ? -4 : 0);
+    R(-6 + ln, -19 + b, 2, 6, sh2);
+    B(-5 + ln, -20 + b, 10, 10, sh);
+    if (!ol) { R(-1 + ln, -17 + b, 3, 3, T.ac); R(-5 + ln, -11 + b, 10, 1, dk); }
+    B(-4 + ln, -27 + b, 8, 7, sk);
+    if (!ol) {
+      R(2 + ln, -25 + b, 1, 1, dk); R(2 + ln, -22 + b, 2, 1, 0x7a3b2e); R(-2 + ln, -23 + b, 1, 1, lerpC(sk, 0xff6b6b, .35));
+      if (gl) { R(0 + ln, -25 + b, 5, 1, dk); R(1 + ln, -25 + b, 2, 1, f.t === 2 ? 0x66ddff : 0x444466); }
+      if (f.sil > 0) R(0 + ln, -23 + b, 5, 2, 0x000000);
+    }
+    const H2 = (dx, dy, w, h) => R(dx + ln, dy + b, w, h, hc);
+    if (hs === 0) { H2(-4, -28, 8, 2); H2(-4, -27, 2, 3); }
+    else if (hs === 1) { H2(-5, -28, 9, 2); H2(-5, -27, 3, 9); }
+    else if (hs === 2) { H2(-6, -31, 11, 5); H2(-6, -27, 3, 4); }
+    else if (hs === 3) { H2(-4, -28, 8, 2); H2(-4, -27, 2, 2); H2(-7, -27, 3, 2); H2(-8, -26, 2, 5); }
+    else { R(-4 + ln, -29 + b, 8, 2, sh2); R(2 + ln, -28 + b, 5, 1, sh2); H2(-4, -27, 1, 2); }
+    if (!ol && hs !== 4) R(-2 + ln, (hs === 2 ? -30 : -28) + b, 3, 1, lit(hc));
+    if (f.t === 7 && !ol) { R(-5 + ln, -26 + b, 1, 4, dk); R(-5 + ln, -23 + b, 5, 1, dk); R(0 + ln, -23 + b, 1, 1, 0xff3b3b); }
+    if (ps === 'punch') { R(-1 + ln, -19 + b, 9, 2, sh); R(8, -19 + b, 2, 3, sk); }
+    else if (ps === 'cast') { R(-1, -19 + b, 8, 2, sh); R(7, -20 + b, 2, 4, sk); }
+    else if (ps === 'block') { R(3, -26 + b, 2, 8, sk); R(2, -19 + b, 3, 2, sh); }
+    else if (ps === 'hurt') R(-7 + ln, -21 + b, 2, 6, sh);
+    else if (ps === 'wind') { R(-9, -20 + b, 5, 2, sh); R(-10, -20 + b, 2, 2, sk); }
+    else { const a = ps === 'walk' ? Math.round(Math.sin(f.anim * 12)) : 0; R(3 + ln + a, -19 + b, 2, 6, sh); R(3 + ln + a, -13 + b, 2, 2, sk); }
+  };
+  // pasada 1: contorno (morado muy oscuro, no negro puro); pasada 2: colores
+  const OC = f.fl > 0 ? 0xffffff : 0x1d1430;
+  body((dx, dy, w, h) => { if (w * h > 2) { g.fillStyle(OC); g.fillRect(X + (fc > 0 ? dx - 1 : -dx - w - 1) * U, Y + (dy - 1) * U, (w + 2) * U, (h + 2) * U); } }, 1);
+  body((dx, dy, w, h, c) => { g.fillStyle(c); g.fillRect(X + (fc > 0 ? dx : -dx - w) * U, Y + dy * U, w * U, h * U); }, 0);
+  // estela del golpe (smear) y brillo del poder
+  if (ps === 'punch') { g.fillStyle(0xffffff, .45); g.fillRect(X + (fc > 0 ? 2 : -10) * U, Y - 19 * U, 8 * U, 2 * U); }
+  if (ps === 'cast') { g.fillStyle(T.col, .5); g.fillCircle(X + fc * 11 * U, Y - 18 * U, 4 * U); }
+  if (f.stun > 0) for (let k = 0; k < 3; k++) { g.fillStyle(0xffe066); g.fillRect(X + Math.cos(S.T * 6 + k * 2.1) * 22 * sc - 3, Y - 155 * sc + Math.sin(S.T * 6 + k * 2.1) * 6, 6, 6); }
+  if (f.inv > 0) { g.fillStyle(0xc39bd3); g.fillRect(X - 3, Y - 170 * sc + Math.sin(S.T * 8) * 4, 6, 10); }
 }
 
 function drawClock(g, f, X, Y, sc) {
@@ -449,7 +471,13 @@ function drawP(g, p) {
 
 // ---------- Escenarios ----------
 function P(a) { const o = []; for (let i = 0; i < a.length; i += 2) o.push({ x: a[i], y: a[i + 1] }); return o; }
-function sky(g, a, b) { for (let i = 0; i < 20; i++) { g.fillStyle(lerpC(a, b, i / 19)); g.fillRect(0, i * 26, W, 27); } }
+function sky(g, a, b) {
+  for (let i = 0; i < 8; i++) {
+    const y = i * 65;
+    g.fillStyle(lerpC(a, b, i / 7)); g.fillRect(0, y, W, 65);
+    if (i < 7) { g.fillStyle(lerpC(a, b, (i + 1) / 7)); for (let x = 0; x < W; x += 8) { g.fillRect(x, y + 57, 4, 4); g.fillRect(x + 4, y + 61, 4, 4); } }
+  }
+}
 function mtn(g, a, c) { g.fillStyle(c); g.fillPoints(P(a), true); }
 let seed = 1;
 const rr = () => (seed = seed * 16807 % 2147483647) / 2147483647;
@@ -690,7 +718,7 @@ function initFight() {
 }
 function startRound() {
   S.F.forEach(reset);
-  S.pr = []; S.walls = []; S.tm = []; S.pa = [];
+  S.pr = []; S.walls = []; S.tm = []; S.pa = []; S.imp = []; S.hst = 0;
   S.time = 36; S.ph = 'intro'; S.pt = 1.8;
   ann('ROUND ' + S.rd, '#ffffff', 700);
   later(1, () => { ann('¡A HACKEAR!', '#e1ff00', 500); snd('ok'); });
@@ -701,6 +729,7 @@ function endRound(w) {
 }
 function updFight(dt) {
   const [a, b] = S.F;
+  if (S.hst > 0) { S.hst -= dt; drawFight(0); return; }
   if (S.ph === 'intro') { S.pt -= dt; if (S.pt <= 0) S.ph = 'fight'; }
   for (let i = S.tm.length - 1; i >= 0; i--) { const t = S.tm[i]; t.t -= dt; if (t.t <= 0) { S.tm.splice(i, 1); t.fn(); } }
   step(a, b, dt); step(b, a, dt);
@@ -748,13 +777,17 @@ function updFight(dt) {
       return;
     }
   }
-  // dibujo
+  drawFight(dt);
+}
+function drawFight(dt) {
+  const [a, b] = S.F;
   const g = S.g; g.clear();
   stageFx(g, S.stage);
   for (const w of S.walls) { g.fillStyle(0x6d4c2f); g.fillRect(w.x - 14, GR - 105, 6, 105); g.fillRect(w.x + 8, GR - 105, 6, 105); g.fillStyle(0x8d6e4f); for (let y = GR - 98; y < GR; y += 20) g.fillRect(w.x - 14, y, 28, 7); }
   drawF(g, b, b.x, b.y); drawF(g, a, a.x, a.y);
   for (const p of S.pr) drawP(g, p);
   for (let i = S.pa.length - 1; i >= 0; i--) { const q = S.pa[i]; q.l -= dt; q.vy += 900 * dt; q.x += q.vx * dt; q.y += q.vy * dt; if (q.l <= 0) S.pa.splice(i, 1); else { g.fillStyle(q.c); g.fillRect(q.x - 3, q.y - 3, 6, 6); } }
+  for (let i = S.imp.length - 1; i >= 0; i--) { const q = S.imp[i], z = 14 * q.s * (q.l / .12 + .4); q.l -= dt || .016; if (q.l <= 0) { S.imp.splice(i, 1); continue; } g.fillStyle(0xffffff); g.fillRect(q.x - z * 1.6, q.y - 3, z * 3.2, 6); g.fillRect(q.x - 3, q.y - z * 1.6, 6, z * 3.2); g.fillStyle(0xffe066); g.fillRect(q.x - z / 2, q.y - z / 2, z, z); }
   hud();
 }
 function hud() {
