@@ -598,6 +598,8 @@ function sky(g, a, b) {
     g.fillStyle(lerpC(a, b, i / 7)); g.fillRect(0, y, W, 65);
     if (i < 7) { g.fillStyle(lerpC(a, b, (i + 1) / 7)); for (let x = 0; x < W; x += 8) { g.fillRect(x, y + 57, 4, 4); g.fillRect(x + 4, y + 61, 4, 4); } }
   }
+  const m = [[400, 215, 3.2], [400, 215, 3.2], [560, 215, 2.6], [400, 200, 2.6], [560, 200, 2.4], [430, 185, 2.4]][S.mid];
+  if (m) { g.save(); g.translateCanvas(m[0], m[1]); g.scaleCanvas(m[2], m[2]); motif(g, S.mid); g.restore(); }
 }
 function mtn(g, a, c) { g.fillStyle(c); g.fillPoints(P(a), true); }
 let seed = 1;
@@ -618,8 +620,8 @@ function tower(g, x, c, win) { g.fillStyle(c); g.fillRect(x, 150, 40, 290); g.fi
 
 // ---------- Edition motifs: each tour stop had its symbol; here they are drawn as a yellow neon hologram ----------
 function motif(g, id) {
-  const [x, y] = [[370, 175], [170, 150], [620, 150], [170, 178], [620, 182], [300, 105]][id];
-  for (const [w, a] of [[7, .14], [2, .75]]) {
+  const x = 0, y = 0;
+  for (const [w, a] of [[3, .12], [1, .55]]) {
     g.lineStyle(w, 0xf2ff00, a);
     if (id < 2) { g.beginPath(); g.arc(x, y, 40, Math.PI, 0, false); g.strokePath(); g.strokeRect(x - 52, y, 104, 14); g.strokeRect(x - 6, y - 39, 12, 39); for (let i = -2; i <= 2; i++) if (i) g.lineBetween(x + i * 15, y, x + i * 9, y - 30); }
     else if (id === 2) { g.strokeCircle(x, y, 32); g.strokeEllipse(x, y - 26, 44, 10); g.lineBetween(x + 6, y - 26, x + 30, y - 82); g.strokeEllipse(x, y + 30, 30, 8); }
@@ -630,8 +632,8 @@ function motif(g, id) {
 }
 
 function drawStage(g, id) {
+  S.mid = id;
   drawStageBase(g, id);
-  if (id < 6) motif(g, id);
 }
 function drawStageBase(g, id) {
   const AND = [0, 330, 90, 190, 170, 260, 260, 150, 370, 250, 470, 170, 580, 260, 680, 180, 800, 280, 800, 440, 0, 440];
