@@ -41,7 +41,7 @@ const PAT = [0, 0, 12, 0, 7, 0, 10, 12, 0, 0, 12, 0, 5, 7, 3, 5];
 const PUNCH = { k: 'p', s: .05, a: .08, r: .14, rng: 70, d: 5, y: -108 };
 const KICK = { k: 'k', s: .09, a: .1, r: .22, rng: 95, d: 8, y: -68 };
 
-const S = { ui: [], names: ['', ''], tw: {}, T: 0, pr: [], pa: [], walls: [], tm: [], imp: [], hst: 0 };
+const S = { ch: [], ui: [], names: ['', ''], tw: {}, T: 0, pr: [], pa: [], walls: [], tm: [], imp: [], hst: 0 };
 const ST = window.platanusArcadeStorage;
 
 new Phaser.Game({
@@ -139,13 +139,13 @@ function go(s, arg) {
   clr();
   S.scr = s; S.st = 0;
   S.bg.clear(); S.g.clear(); S.h.clear();
-  ({ title: initTitle, sel: initSel, vs: initVs, fight: initFight, res: initRes, over: initOver, end: initEnd })[s](arg);
+  ({ title: initTitle, sel: initSel, vs: initVs, fight: initFight, res: initRes, over: initOver, end: initEnd, story: initStory, cho: initCho })[s](arg);
 }
 
 function update(time, delta) {
   const dt = Math.min(delta / 1000, .05);
   S.T += dt; S.st += dt; S.dt = dt;
-  ({ title: updTitle, sel: updSel, vs: updVs, fight: updFight, res: updRes, over: updOver, end: updEnd })[S.scr](dt);
+  ({ title: updTitle, sel: updSel, vs: updVs, fight: updFight, res: updRes, over: updOver, end: updEnd, story: updStory, cho: updCho })[S.scr](dt);
   if (S.fl > 0) { S.fl -= dt; S.ov.setAlpha(Math.max(0, Math.min(1, S.fl * 2.5))); } else S.ov.setAlpha(0);
   S.c.p = Object.create(null);
 }
@@ -206,7 +206,7 @@ const PW = [
 
 function cast(f, k) {
   f.cast = .3;
-  if (k < 2) f.cd[k] = k ? 4.5 : 2.2; else f.m = 0;
+  if (k < 2) f.cd[k] = (k ? 4.5 : 2.2) * (f.cdm || 1); else f.m = 0;
   PW[f.t][k](f);
   snd('pw');
   flt(f, TEAMS[f.t].p[k], k == 2 ? '#ff6ec7' : '#ffffff');
@@ -305,6 +305,7 @@ function hurt(o, d, f, fx) {
   }
   if (fx.bonus) d += (100 - o.hp) * .25;
   if (f.buff > 0) d *= 1.4;
+  d *= f.dm || 1;
   const dir = o.x >= f.x ? 1 : -1;
   if (o.blk && !fx.ub) {
     d *= .15; o.kx = dir * 140; spark(o.x - dir * 20, o.y - 100, 0xffffff, 5); snd('blk');
@@ -667,7 +668,7 @@ function updSel(dt) {
         go('vs');
       } else {
         S.lad = [0, 1, 2, 3, 4, 5, 6].filter(x => x !== a.t).sort(() => Math.random() - .5).slice(0, 3).concat([7, 8]);
-        S.li = 0; nextArcade();
+        S.li = 0; S.ch = []; go('story');
       }
     }
   } else S.rt = 0;
@@ -677,6 +678,56 @@ function nextArcade() {
   S.F = [mkF(0, h.t, h.lk, h.name, 0), mkF(1, t, T.m[(Math.random() * T.m.length) | 0], T.n, 1)];
   S.stage = T.st; S.lv = S.li;
   go('vs');
+}
+
+
+// ---------- Historia del modo arcade (ramificar y converger) ----------
+// Cada pelea es una hora del hackatón. Entre peleas hay una decisión con costo y beneficio.
+// Las peleas siguen siendo las mismas (los caminos convergen), pero las decisiones se recuerdan:
+// cambian reglas de la siguiente pelea, lo que dicen los jefes y el final.
+const HR = ['VIE 23:00 · ARRANCA EL RELOJ', 'SÁB 05:00 · LA MADRUGADA', 'SÁB 15:00 · EL PIVOTE', 'DOM 08:00 · ENSAYO CON RAFA', 'DOM 10:59 · EL DEADLINE'];
+const QT = ['¿AHORRASTE PARA ESTA PELEA?', 'COPIO TU ESTRATEGIA. COMISIÓN CERO.', 'YA ESCANEÉ TU CARA. NO ME OLVIDARÁS.', 'ESA JUGADA NO PASA LA REGLA.', 'ELIGE BIEN: ESTE CUENTO TIENE FINAL.', 'SIN INTERNET TAMBIÉN TE ENCUENTRO.', 'BIENVENIDO A MI PALACIO. HAY EXAMEN.', 'DE CERO A PRODUCTO. ¿TÚ QUÉ TRAJISTE?', 'TIC, TAC. NADIE ME HA GANADO.'];
+const CHO = [
+  { q: 'SON LAS 4 AM Y EL EQUIPO ESTÁ MUERTO.', a: ['DORMIR 2 HORAS', 'SEGUIR HACKEANDO'], d: ['VIDA COMPLETA,\nSIN SÚPER', 'SÚPER LLENO,\nPERO 75% DE VIDA'] },
+  { q: 'UN MENTOR DICE QUE LA IDEA NO CONVENCE.', a: ['PIVOTEAR', 'DEFENDER LA IDEA'], d: ['PODERES SE RECARGAN\n30% MÁS RÁPIDO', 'GOLPES CON\n20% MÁS DAÑO'] },
+  { q: 'FALTAN 3 HORAS PARA PRESENTAR.', a: ['DEPLOY A PRODUCCIÓN', 'PULIR LA DEMO LOCAL'], d: ['EL FLASH DE NACHO\nYA NO TE ATURDE', 'RAFA EMPIEZA CON\n20% MENOS VIDA'] },
+];
+function quote(f) {
+  if (S.np === 1 && f.t === 7) return S.ch[2] === 0 ? 'VI TU DEPLOY. VEAMOS SI AGUANTA.' : 'DEMO LOCAL, ¿EH? LA REGLA ES PRODUCCIÓN.';
+  if (S.np === 1 && f.t === 8) return S.ch[0] === 0 ? 'DORMISTE. YO NUNCA DUERMO.' : 'TE VES CANSADO. PERFECTO.';
+  return QT[f.t];
+}
+function initStory() {
+  drawStage(S.bg, 1); S.bg.fillStyle(0x000000, .65); S.bg.fillRect(0, 0, W, H);
+  tx(W / 2, 140, 'SANTIAGO, 20 DE NOVIEMBRE', 26, '#e1ff00');
+  tx(W / 2, 250, '7 SEDES. 7 CAMPEONES.\n36 HORAS PARA LLEGAR\nA LA FOTO CON EL EQUIPO PLATANUS.\n\nCADA DECISIÓN DE TU EQUIPO\nCAMBIA LO QUE VIENE.', 18, '#ffffff');
+  tx(W / 2, 400, 'TU EQUIPO: ' + TEAMS[S.hum.t].n + ' (' + TEAMS[S.hum.t].c + ')', 16, '#' + TEAMS[S.hum.t].col.toString(16).padStart(6, '0'));
+  S.b1 = tx(W / 2, 520, 'BOTÓN 1 · EMPEZAR', 16, '#b8c48d');
+}
+function updStory() {
+  S.b1.setAlpha(S.T % 1 < .6 ? 1 : .4);
+  if (S.st > .4 && (pr('P1_1') || pr('START1') || S.st > 9)) nextArcade();
+}
+function initCho(k) {
+  S.ck = k; S.cs = 0;
+  S.bg.fillStyle(0x0b0f03); S.bg.fillRect(0, 0, W, H);
+  tx(W / 2, 60, HR[k + 1], 18, '#b8c48d');
+  tx(W / 2, 130, CHO[k].q, 22, '#ffffff');
+  tx(W / 2, 170, '¿QUÉ HACE TU EQUIPO?', 16, '#e1ff00');
+  S.co = [0, 1].map(j => [tx(220 + j * 360, 300, CHO[k].a[j], 18, '#ffffff'), tx(220 + j * 360, 360, CHO[k].d[j], 14, '#b8c48d')]);
+  tx(W / 2, 520, '◄► ELEGIR · BOTÓN 1 CONFIRMAR', 14, '#b8c48d');
+}
+function updCho() {
+  if (pr('P1_L')) { S.cs = 0; snd('sel'); }
+  if (pr('P1_R')) { S.cs = 1; snd('sel'); }
+  const g = S.g; g.clear();
+  for (let j = 0; j < 2; j++) {
+    const on = j === S.cs;
+    g.fillStyle(on ? 0x2a3010 : 0x14170a); g.fillRect(70 + j * 360, 250, 300, 150);
+    g.lineStyle(on ? 4 : 2, on ? 0xe1ff00 : 0x3a3a0a); g.strokeRect(70 + j * 360, 250, 300, 150);
+    S.co[j][0].setColor(on ? '#e1ff00' : '#777777');
+  }
+  if (S.st > .4 && (pr('P1_1') || pr('START1'))) { S.ch[S.ck] = S.cs; snd('ok'); nextArcade(); }
 }
 
 // ---------- Pantalla: VS ----------
@@ -689,8 +740,9 @@ function initVs() {
     const x = 200 + i * 400, T = TEAMS[f.t];
     tx(x, 70, f.name, 30, i ? '#ff6ec7' : '#e1ff00');
     tx(x, 104, f.t < 7 ? 'TEAM ' + T.n + ' · ' + T.c : T.c, 14, '#f7ffd8');
+    tx(x, 150, '«' + quote(f) + '»', 12, '#ffffff');
   });
-  if (S.np === 1) tx(W / 2, 30, S.li === 3 ? '¡JEFE! RAFA, EL ORGANIZADOR (CON NACHO EN LA CÁMARA)' : S.li === 4 ? '¡JEFE FINAL!' : 'PELEA ' + (S.li + 1) + ' DE 5', 16, '#ffffff');
+  if (S.np === 1) tx(W / 2, 30, HR[S.li] + (S.li === 3 ? ' (NACHO EN LA CÁMARA)' : ''), 16, '#ffffff');
   S.vsT = tx(W / 2, 290, 'VS', 64, '#ffffff');
   tx(W / 2, 560, 'ESCENARIO: ' + SN[S.stage], 16, '#e1ff00');
 }
@@ -720,6 +772,12 @@ function startRound() {
   S.F.forEach(reset);
   S.pr = []; S.walls = []; S.tm = []; S.pa = []; S.imp = []; S.hst = 0;
   S.time = 36; S.ph = 'intro'; S.pt = 1.8;
+  if (S.np === 1) {
+    const h = S.F[0], c = S.ch;
+    if (c[0] === 1) { h.hp = h.ghp = 75; if (S.rd === 1) h.m = 100; }
+    h.cdm = c[1] === 0 ? .7 : 1; h.dm = c[1] === 1 ? 1.2 : 1;
+    if (c[2] === 1 && S.F[1].t === 7) S.F[1].hp = S.F[1].ghp = 80;
+  }
   ann('ROUND ' + S.rd, '#ffffff', 700);
   later(1, () => { ann('¡A HACKEAR!', '#e1ff00', 500); snd('ok'); });
 }
@@ -762,7 +820,7 @@ function updFight(dt) {
     if (b.t === 7) {
       S.na -= dt;
       if (S.na <= 0) { S.na = 7; S.fl = .35; snd('blk'); }
-      if (!S.photo && b.hp < 50) { S.photo = 1; S.fl = .6; a.stun = 1; ann('¡FOTO DEL EQUIPO!', '#1abc9c', 900); snd('ctr'); }
+      if (!S.photo && b.hp < 50) { S.photo = 1; S.fl = .6; if (S.ch[2] !== 0) a.stun = 1; ann('¡FOTO DEL EQUIPO!', '#1abc9c', 900); snd('ctr'); }
     }
     if (S.time <= 0 && S.ph === 'fight') {
       S.time = 0;
@@ -817,7 +875,7 @@ function matchOver(w) {
     if (w.i === 0) {
       S.tw[w.t] = (S.tw[w.t] || 0) + 1; save();
       S.li++;
-      if (S.li >= S.lad.length) go('end'); else nextArcade();
+      if (S.li >= S.lad.length) go('end'); else if (S.li <= 3) go('cho', S.li - 1); else nextArcade();
     } else go('over');
   } else { S.tw[w.t] = (S.tw[w.t] || 0) + 1; save(); go('res', w); }
 }
@@ -852,7 +910,9 @@ function initEnd() {
   S.fl = 1.2; snd('ko');
   tx(W / 2, 250, '¡FOTO CON EL EQUIPO PLATANUS!', 32, '#e1ff00');
   tx(W / 2, 292, 'CAMPEÓN: ' + S.hum.name + ' · TEAM ' + TEAMS[S.hum.t].n, 18, '#ffffff');
-  tx(W / 2, 330, 'SOBREVIVISTE A LAS 36 HORAS', 15, '#f7ffd8');
+  const c = S.ch, e = c[2] === 1 ? ['FINAL: LA DEMO LOCAL', 'LA DEMO CORRIÓ EN TU LAPTOP... HASTA QUE SE APAGÓ.\nGANASTE IGUAL. PRÓXIMA VEZ: DEPLOY TEMPRANO.'] : c[0] === 0 ? ['FINAL: EL PITCH PERFECTO', 'DURMIERON, HICIERON DEPLOY Y LA DEMO CORRIÓ EN VIVO.\nEL JURADO PIDIÓ EL LINK.'] : ['FINAL: PRODUCTO EN VIVO, OJERAS EN VIVO', 'LA DEMO FUNCIONÓ EN PRODUCCIÓN.\nNADIE RECUERDA EL PITCH, TODOS RECUERDAN LAS OJERAS.'];
+  tx(W / 2, 336, e[0], 17, '#ff6ec7');
+  tx(W / 2, 384, e[1] + '\n' + (c[1] === 0 ? 'EL PIVOTE SALIÓ BIEN.' : 'DEFENDISTE LA IDEA HASTA EL FINAL.'), 13, '#f7ffd8');
   tx(W / 2, 580, 'START · VOLVER AL INICIO', 14, '#b8c48d');
   S.e = [mkF(0, S.hum.t, S.hum.lk, '', 0), mkF(1, 7, '1000', '', 0)];
   S.e.forEach(f => { f.win = 1; f.face = 1; });
