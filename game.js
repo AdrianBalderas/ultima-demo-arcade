@@ -65,7 +65,10 @@ function lerpC(a, b, t) {
   return ((r | 0) << 16) | ((g | 0) << 8) | (c | 0);
 }
 function tx(x, y, s, sz = 16, c = '#ffffff', ox = .5) {
-  const t = S.sc.add.text(x, y, s, { fontFamily: 'monospace', fontSize: sz + 'px', color: c, fontStyle: 'bold', stroke: '#000000', strokeThickness: Math.max(3, sz / 5), align: 'center' }).setOrigin(ox, .5).setDepth(10);
+  const fl = S.flat, cap = fl && c === '#b8c48d';
+  if (fl && (cap || c === '#e1ff00')) c = '#f2ff00';
+  const t = S.sc.add.text(x, y, s, { fontFamily: 'ui-monospace, monospace', fontSize: sz + 'px', color: c, fontStyle: 'bold', stroke: '#000000', strokeThickness: fl ? 0 : Math.max(3, sz / 5), align: 'center' }).setOrigin(ox, .5).setDepth(10);
+  if (fl) t.setLetterSpacing(sz < 16 ? 2 : 1).setAlpha(cap ? .55 : 1);
   S.ui.push(t);
   return t;
 }
@@ -167,7 +170,7 @@ function create() {
 
 function go(s, arg) {
   clr();
-  S.scr = s; S.st = 0;
+  S.scr = s; S.st = 0; S.flat = s !== 'vs' && s !== 'fight';
   S.bg.clear(); S.g.clear(); S.h.clear();
   ({ title: initTitle, sel: initSel, vs: initVs, fight: initFight, res: initRes, over: initOver, end: initEnd, story: initStory, cho: initCho })[s](arg);
 }
@@ -689,27 +692,39 @@ function stageFx(g, id) {
   nacho(g, 750, GR - 4, 2.4, fl);
 }
 
+
+// ---------- Menu style (inspired by the Platanus site look): neon yellow on dark gray + wireframe floor ----------
+const Y = 0xf2ff00;
+function menuBg(g) {
+  g.fillStyle(0x1a1a1a); g.fillRect(0, 0, W, H);
+  for (let r = 260; r > 40; r -= 40) { g.fillStyle(Y, .018); g.fillCircle(W / 2, 150, r); }
+  g.lineStyle(1, Y, .22);
+  for (let i = -12; i <= 12; i++) g.lineBetween(W / 2 + i * 14, 430, W / 2 + i * 120, H);
+  for (let k = 0; k < 7; k++) { const y = 430 + k * k * 4.2; g.lineBetween(0, y, W, y); }
+  g.lineStyle(1, Y, .35); g.strokeRect(12, 12, W - 24, H - 24);
+}
+
 // ---------- Pantalla: titulo ----------
 function initTitle() {
   const g = S.bg;
-  g.fillStyle(0x0b0f03); g.fillRect(0, 0, W, H);
-  g.lineStyle(1, 0xe1ff00, .08); for (let x = 0; x < W; x += 32) g.lineBetween(x, 0, x, H); for (let y = 0; y < H; y += 32) g.lineBetween(0, y, W, y);
-  banana(g, 400, -45, 100, 22);
-  tx(W / 2, 120, 'PLATANUS HACK', 58, '#e1ff00');
-  tx(W / 2, 178, 'F I G H T E R S', 40, '#ff6ec7');
-  tx(W / 2, 222, 'LOS EQUIPOS GANADORES DE CADA SEDE, CARA A CARA', 15, '#f7ffd8');
-  S.b1 = tx(W / 2, 285, 'START 1 · ARCADE (1 JUGADOR)', 22);
-  S.b2 = tx(W / 2, 320, 'START 2 · VERSUS (2 JUGADORES)', 22);
+  menuBg(g);
+  tx(40, 36, 'platanus hack [26]', 18, '#f2ff00', 0);
+  tx(760, 36, 'ARCADE · SANTIAGO', 11, '#b8c48d', 1);
+  tx(W / 2, 128, 'FIGHTERS', 92, '#f2ff00').setShadow(0, 0, '#f2ff00', 18, false, true);
+  tx(W / 2, 196, 'LOS GANADORES DE CADA SEDE, CARA A CARA', 12, '#b8c48d');
+  g.fillStyle(Y); g.fillRect(190, 248, 420, 40); g.lineStyle(2, Y); g.strokeRect(190, 298, 420, 40);
+  S.b1 = tx(W / 2, 268, 'START 1 · ARCADE', 20, '#1a1a1a');
+  S.b2 = tx(W / 2, 318, 'START 2 · VERSUS', 20, '#f2ff00');
   const rk = Object.keys(S.tw).filter(k => S.tw[k] > 0).sort((a, b) => S.tw[b] - S.tw[a]).slice(0, 3);
-  tx(W / 2, 358, rk.length ? 'COPA DE SEDES: ' + rk.map(k => TEAMS[k].n + ' ' + S.tw[k]).join(' · ') : 'COPA DE SEDES: GANA PELEAS PARA SUMARLE A TU EQUIPO', 12, '#b8c48d');
-  tx(W / 2, 378, 'LOGROS ' + pc(S.ach.a) + '/8 · FINALES ' + pc(S.ach.e) + '/3', 12, '#1abc9c');
+  tx(W / 2, 358, rk.length ? 'COPA DE SEDES: ' + rk.map(k => TEAMS[k].n + ' ' + S.tw[k]).join(' · ') : 'COPA DE SEDES: GANA PELEAS PARA SUMARLE A TU EQUIPO', 11, '#b8c48d');
+  tx(W / 2, 378, 'LOGROS ' + pc(S.ach.a) + '/8 · FINALES ' + pc(S.ach.e) + '/3', 11, '#b8c48d');
   tx(W / 2, 398, S.hs.length ? 'RÉCORDS: ' + S.hs.slice(0, 3).map((e, i) => (i + 1) + '. ' + e.n + ' ' + e.s).join('  ') : 'RÉCORDS: TODAVÍA NADIE. SÉ EL PRIMERO.', 12, '#e1ff00');
   S.demo = SELT.map((t, j) => { const f = mkF(0, t, TEAMS[t].m[j % 5], '', 0); f.face = j < 4 ? 1 : -1; return f; });
 }
 function updTitle(dt) {
   S.g.clear();
   S.demo.forEach((f, j) => { f.anim += dt; drawF(S.g, f, 58 + j * 97, 585, .85); });
-  S.b1.setAlpha(S.T % 1 < .6 ? 1 : .4);
+  S.b1.setAlpha(S.T % 1 < .6 ? 1 : .55);
   if (pr('START1')) { snd('ok'); S.np = 1; go('sel'); }
   else if (pr('START2')) { snd('ok'); S.np = 2; go('sel'); }
 }
@@ -717,7 +732,7 @@ function updTitle(dt) {
 // ---------- Pantalla: seleccion ----------
 function initSel() {
   const g = S.bg;
-  g.fillStyle(0x0b0f03); g.fillRect(0, 0, W, H); g.fillStyle(0x1a1e05); g.fillRect(398, 0, 4, H);
+  menuBg(g); g.fillStyle(Y, .35); g.fillRect(399, 0, 2, H);
   S.sel = [0, 1].map(i => {
     const s = { ph: i < S.np ? 0 : 9, t: i ? 6 : 4, m: 0, lk: null, nm: [], cur: 0, cx: 200 + i * 400 };
     s.lk = TEAMS[s.t].m[0].split('').map(Number);
@@ -817,8 +832,9 @@ function quote(f) {
   return QT[f.t];
 }
 function initStory() {
-  drawStage(S.bg, 1); S.bg.fillStyle(0x000000, .65); S.bg.fillRect(0, 0, W, H);
-  tx(W / 2, 140, 'SANTIAGO, 20 DE NOVIEMBRE', 26, '#e1ff00');
+  menuBg(S.bg);
+  tx(W / 2, 90, 'DESTINO · SANTIAGO, CHILE', 11, '#b8c48d');
+  tx(W / 2, 140, '20 DE NOVIEMBRE', 40, '#f2ff00').setShadow(0, 0, '#f2ff00', 14, false, true);
   tx(W / 2, 250, '7 SEDES. 7 CAMPEONES.\n36 HORAS PARA LLEGAR\nA LA FOTO CON EL EQUIPO PLATANUS.\n\nCADA DECISIÓN DE TU EQUIPO\nCAMBIA LO QUE VIENE.', 18, '#ffffff');
   tx(W / 2, 400, 'TU EQUIPO: ' + TEAMS[S.hum.t].n + ' (' + TEAMS[S.hum.t].c + ')', 16, '#' + TEAMS[S.hum.t].col.toString(16).padStart(6, '0'));
   S.b1 = tx(W / 2, 520, 'BOTÓN 1 · EMPEZAR', 16, '#b8c48d');
@@ -829,8 +845,8 @@ function updStory() {
 }
 function initCho(k) {
   S.ck = k; S.cs = 0;
-  S.bg.fillStyle(0x0b0f03); S.bg.fillRect(0, 0, W, H);
-  tx(W / 2, 60, HR[k + 1], 18, '#b8c48d');
+  menuBg(S.bg);
+  tx(W / 2, 60, HR[k + 1], 13, '#b8c48d');
   tx(W / 2, 130, CHO[k].q, 22, '#ffffff');
   tx(W / 2, 170, '¿QUÉ HACE TU EQUIPO?', 16, '#e1ff00');
   S.co = [0, 1].map(j => [tx(220 + j * 360, 300, CHO[k].a[j], 18, '#ffffff'), tx(220 + j * 360, 360, CHO[k].d[j], 14, '#b8c48d')]);
@@ -842,9 +858,9 @@ function updCho() {
   const g = S.g; g.clear();
   for (let j = 0; j < 2; j++) {
     const on = j === S.cs;
-    g.fillStyle(on ? 0x2a3010 : 0x14170a); g.fillRect(70 + j * 360, 250, 300, 150);
-    g.lineStyle(on ? 4 : 2, on ? 0xe1ff00 : 0x3a3a0a); g.strokeRect(70 + j * 360, 250, 300, 150);
-    S.co[j][0].setColor(on ? '#e1ff00' : '#777777');
+    g.fillStyle(on ? Y : 0x1a1a1a); g.fillRect(70 + j * 360, 250, 300, 150);
+    g.lineStyle(2, Y, on ? 1 : .5); g.strokeRect(70 + j * 360, 250, 300, 150);
+    S.co[j][0].setColor(on ? '#1a1a1a' : '#f2ff00'); S.co[j][1].setColor(on ? '#1a1a1a' : '#f2ff00').setAlpha(on ? 1 : .55);
   }
   if (S.st > .4 && (pr('P1_1') || pr('START1'))) { S.ch[S.ck] = S.cs; snd('ok'); nextArcade(); }
 }
@@ -1016,8 +1032,8 @@ function matchOver(w) {
 // ---------- Pantallas finales ----------
 function initRes(w) {
   S.w = w; w.win = 1; w.face = 1;
-  drawStage(S.bg, S.stage); S.bg.fillStyle(0x000000, .6); S.bg.fillRect(0, 0, W, H);
-  tx(W / 2, 90, '¡GANA ' + w.name + '!', 44, w.i ? '#ff6ec7' : '#e1ff00');
+  menuBg(S.bg);
+  tx(W / 2, 90, '¡GANA ' + w.name + '!', 44, '#f2ff00').setShadow(0, 0, '#f2ff00', 14, false, true);
   tx(W / 2, 140, 'TEAM ' + TEAMS[w.t].n + ' · ' + TEAMS[w.t].c, 18, '#f7ffd8');
   tx(W / 2, 520, 'START · REVANCHA      BOTÓN 6 · CAMBIAR EQUIPOS', 16, '#ffffff');
 }
@@ -1027,8 +1043,8 @@ function updRes(dt) {
   else if (pr('P1_6') || pr('P2_6')) go('sel');
 }
 function initOver() {
-  S.bg.fillStyle(0x14040a); S.bg.fillRect(0, 0, W, H);
-  tx(W / 2, 200, '¿CONTINUAR?', 50, '#ff5050');
+  menuBg(S.bg);
+  tx(W / 2, 200, '¿CONTINUAR?', 50, '#f2ff00').setShadow(0, 0, '#f2ff00', 14, false, true);
   S.ct = tx(W / 2, 300, '9', 80, '#ffffff');
   tx(W / 2, 420, 'START 1 · SEGUIR HACKEANDO (LOS PUNTOS VUELVEN A 0)', 16, '#e1ff00');
   tx(W / 2, 446, 'BOTÓN 6 · CAMBIAR DE PERSONAJE', 14, '#b8c48d');
