@@ -184,7 +184,7 @@ function mkF(i, t, look, name, cpu) {
   return f;
 }
 function reset(f) {
-  Object.assign(f, { x: f.i ? 560 : 240, y: GR, vx: 0, vy: 0, kx: 0, face: f.i ? -1 : 1, hp: 100, ghp: 100, atk: null, at: 0, hd: 0, lh: -1, cast: 0, cd: [0, 0], hs: 0, stun: 0, inv: 0, sil: 0, slow: 0, sh: 0, buff: 0, ctr: 0, blk: 0, cr: 0, gr: 1, ko: 0, fl: 0, ait: 0, aiI: null, win: 0, cb: 0, cbt: 0, tk: 0, iv: 0 });
+  Object.assign(f, { x: f.i ? 560 : 240, y: GR, vx: 0, vy: 0, kx: 0, face: f.i ? -1 : 1, hp: 100, ghp: 100, atk: null, at: 0, hd: 0, lh: -1, cast: 0, cd: [0, 0], hs: 0, stun: 0, inv: 0, sil: 0, slow: 0, sh: 0, buff: 0, ctr: 0, blk: 0, cr: 0, gr: 1, ko: 0, fl: 0, ait: 0, aiI: null, win: 0, cb: 0, cbt: 0, tk: 0, iv: 0, dz: 0, mx: 0 });
 }
 function startAtk(f, a) { f.atk = a; f.at = 0; f.hd = 0; f.lh = -1; if (f.gr && !a.dash) f.vx = 0; }
 function inRange(f, o, a) {
@@ -273,6 +273,7 @@ function ai(f, o, dt) {
 }
 
 function step(f, o, dt) {
+  if (f.ko) { f.dz += dt; f.mx = Math.min(1, Math.max(0, (f.dz - .5) / 1.1)); }
   for (const k of ['hs', 'stun', 'inv', 'sil', 'slow', 'sh', 'buff', 'ctr', 'fl', 'cast', 'cbt', 'iv']) if (f[k] > 0) f[k] -= dt;
   f.cd[0] -= dt; f.cd[1] -= dt;
   f.anim += dt;
@@ -439,13 +440,38 @@ function drawF(g, f, X, Y, sc = 1) {
   };
   // pasada 1: contorno (morado muy oscuro, no negro puro); pasada 2: colores
   const OC = f.fl > 0 ? 0xffffff : 0x1d1430;
-  body((dx, dy, w, h) => { if (w * h > 2) { g.fillStyle(OC); g.fillRect(X + (fc > 0 ? dx - 1 : -dx - w - 1) * U, Y + (dy - 1) * U, (w + 2) * U, (h + 2) * U); } }, 1);
-  body((dx, dy, w, h, c) => { g.fillStyle(c); g.fillRect(X + (fc > 0 ? dx : -dx - w) * U, Y + dy * U, w * U, h * U); }, 0);
+  const gone = (dx, dy) => f.mx > .25 && ((dx * 7 + dy * 13 + ((S.T * 14) | 0)) & 7) / 8 < (f.mx - .25) * 1.4;
+  body((dx, dy, w, h) => { if (w * h > 2 && !gone(dx, dy)) { g.fillStyle(OC); g.fillRect(X + (fc > 0 ? dx - 1 : -dx - w - 1) * U, Y + (dy - 1) * U, (w + 2) * U, (h + 2) * U); } }, 1);
+  body((dx, dy, w, h, c) => { if (gone(dx, dy)) return; g.fillStyle(f.mx > 0 ? lerpC(c, 0x00ff66, Math.min(1, f.mx * 1.6)) : c); g.fillRect(X + (fc > 0 ? dx : -dx - w) * U, Y + dy * U, w * U, h * U); }, 0);
   // estela del golpe (smear) y brillo del poder
   if (ps === 'punch') { g.fillStyle(0xffffff, .45); g.fillRect(X + (fc > 0 ? 2 : -10) * U, Y - 19 * U, 8 * U, 2 * U); }
   if (ps === 'cast') { g.fillStyle(T.col, .5); g.fillCircle(X + fc * 11 * U, Y - 18 * U, 4 * U); }
   if (f.stun > 0) for (let k = 0; k < 3; k++) { g.fillStyle(0xffe066); g.fillRect(X + Math.cos(S.T * 6 + k * 2.1) * 22 * sc - 3, Y - 155 * sc + Math.sin(S.T * 6 + k * 2.1) * 6, 6, 6); }
   if (f.inv > 0) { g.fillStyle(0xc39bd3); g.fillRect(X - 3, Y - 170 * sc + Math.sin(S.T * 8) * 4, 6, 10); }
+}
+
+
+// ---------- Efecto "se vuelve código": el luchador vencido se deshace en una lluvia de 0 y 1 ----------
+function glyph(g, x, y, one) {
+  if (one) g.fillRect(x, y, 2, 8);
+  else { g.fillRect(x - 2, y, 6, 2); g.fillRect(x - 2, y + 6, 6, 2); g.fillRect(x - 2, y, 2, 8); g.fillRect(x + 2, y, 2, 8); }
+}
+function codeRain(g, f) {
+  if (!(f.mx > 0)) return;
+  const fade = f.dz < 2.4 ? 1 : Math.max(0, 1 - (f.dz - 2.4) * 1.5);
+  if (fade <= 0) return;
+  const cx = f.x - f.face * 40;
+  for (let k = 0; k < 16; k++) {
+    const x = Math.round(cx - 80 + k * 10), sp = 140 + (k * 53) % 90;
+    const hy = GR - 175 + ((S.T * sp + k * 41) % 200);
+    for (let j = 0; j < 7; j++) {
+      const y = hy - j * 11;
+      if (y < GR - 180 || y > GR - 8) continue;
+      const one = ((k * 7 + j * 3 + ((S.T * 9) | 0)) & 1) === 1, al = fade * f.mx * (1 - j / 7);
+      g.fillStyle(0x002b12, al); glyph(g, x + 2, y + 2, one);
+      g.fillStyle(j ? 0x00ff66 : 0xd8ffe0, al); glyph(g, x, y, one);
+    }
+  }
 }
 
 function drawClock(g, f, X, Y, sc) {
@@ -883,7 +909,7 @@ function drawFight(dt) {
   const g = S.g; g.clear();
   stageFx(g, S.stage);
   for (const w of S.walls) { g.fillStyle(0x6d4c2f); g.fillRect(w.x - 14, GR - 105, 6, 105); g.fillRect(w.x + 8, GR - 105, 6, 105); g.fillStyle(0x8d6e4f); for (let y = GR - 98; y < GR; y += 20) g.fillRect(w.x - 14, y, 28, 7); }
-  drawF(g, b, b.x, b.y); drawF(g, a, a.x, a.y);
+  drawF(g, b, b.x, b.y); drawF(g, a, a.x, a.y); codeRain(g, a); codeRain(g, b);
   for (const p of S.pr) drawP(g, p);
   for (let i = S.pa.length - 1; i >= 0; i--) { const q = S.pa[i]; q.l -= dt; q.vy += 900 * dt; q.x += q.vx * dt; q.y += q.vy * dt; if (q.l <= 0) S.pa.splice(i, 1); else { g.fillStyle(q.c); g.fillRect(q.x - 3, q.y - 3, 6, 6); } }
   for (let i = S.imp.length - 1; i >= 0; i--) { const q = S.imp[i], z = 14 * q.s * (q.l / .12 + .4); q.l -= dt || .016; if (q.l <= 0) { S.imp.splice(i, 1); continue; } g.fillStyle(0xffffff); g.fillRect(q.x - z * 1.6, q.y - 3, z * 3.2, 6); g.fillRect(q.x - 3, q.y - z * 1.6, 6, z * 3.2); g.fillStyle(0xffe066); g.fillRect(q.x - z / 2, q.y - z / 2, z, z); }
@@ -947,12 +973,14 @@ function initOver() {
   tx(W / 2, 200, '¿CONTINUAR?', 50, '#ff5050');
   S.ct = tx(W / 2, 300, '9', 80, '#ffffff');
   tx(W / 2, 420, 'START 1 · SEGUIR HACKEANDO (LOS PUNTOS VUELVEN A 0)', 16, '#e1ff00');
+  tx(W / 2, 446, 'BOTÓN 6 · CAMBIAR DE PERSONAJE', 14, '#b8c48d');
   rankTxt(addHS(), 480);
 }
 function updOver() {
   const n = 9 - Math.floor(S.st);
   S.ct.setText(String(Math.max(0, n)));
   if (pr('START1')) { S.pts = 0; nextArcade(); }
+  else if (pr('P1_6')) { S.np = 1; go('sel'); }
   else if (n < 0) go('title');
 }
 function initEnd() {
