@@ -41,7 +41,7 @@ const PAT = [0, 0, 12, 0, 7, 0, 10, 12, 0, 0, 12, 0, 5, 7, 3, 5];
 const PUNCH = { k: 'p', s: .05, a: .08, r: .14, rng: 70, d: 5, y: -108 };
 const KICK = { k: 'k', s: .09, a: .1, r: .22, rng: 95, d: 8, y: -68 };
 
-const S = { ch: [], ui: [], names: ['', ''], tw: {}, T: 0, pr: [], pa: [], walls: [], tm: [], imp: [], hst: 0 };
+const S = { pts: 0, hs: [], ach: { a: 0, e: 0, t: 0 }, ch: [], ui: [], names: ['', ''], tw: {}, T: 0, pr: [], pa: [], walls: [], tm: [], imp: [], hst: 0 };
 const ST = window.platanusArcadeStorage;
 
 new Phaser.Game({
@@ -104,11 +104,38 @@ async function load() {
     if (a && a.found && a.value && Array.isArray(a.value.n)) S.names = a.value.n.slice(0, 2).map(x => typeof x === 'string' ? x.split('').filter(ch => CH.includes(ch)).join('').slice(0, 8) : '');
     const b = await ST.get('phf-wins-v1');
     if (b && b.found && b.value && typeof b.value === 'object') for (const k in b.value) if (+k >= 0 && +k < 7 && typeof b.value[k] === 'number') S.tw[k] = b.value[k];
+    const c = await ST.get('phf-ach-v1');
+    if (c && c.found && c.value) for (const k of ['a', 'e', 't']) if (typeof c.value[k] === 'number') S.ach[k] = c.value[k] | 0;
+    const d = await ST.get('phf-hs-v1');
+    if (d && d.found && Array.isArray(d.value)) S.hs = d.value.filter(e => e && typeof e.n === 'string' && typeof e.s === 'number' && e.t >= 0 && e.t < 7).map(e => ({ n: e.n.slice(0, 8), t: e.t | 0, s: e.s | 0 })).slice(0, 10);
     if (S.scr === 'title') go('title');
   } catch (e) { /* sin guardado */ }
 }
 function save() {
-  try { if (ST) { ST.set('phf-names-v1', { n: S.names }); ST.set('phf-wins-v1', S.tw); } } catch (e) { /* sin guardado */ }
+  try { if (ST) { ST.set('phf-names-v1', { n: S.names }); ST.set('phf-wins-v1', S.tw); ST.set('phf-ach-v1', S.ach); ST.set('phf-hs-v1', S.hs); } } catch (e) { /* sin guardado */ }
+}
+
+
+// ---------- Gamificación: puntos, combos, logros y récords ----------
+const ACH = ['PRIMER DEPLOY', 'PERFECTO', 'COMBO x5', 'VENCISTE A RAFA', 'SOBREVIVISTE AL DEADLINE', 'SIN DORMIR', 'LOS 3 FINALES', 'TURISTA (4 EQUIPOS)'];
+const pc = n => { let c = 0; while (n) { c += n & 1; n >>= 1; } return c; };
+function unlock(i) {
+  if (S.ach.a >> i & 1) return;
+  S.ach.a |= 1 << i; save(); snd('heal');
+  const t = S.sc.add.text(W / 2, 112, 'LOGRO DESBLOQUEADO: ' + ACH[i], { fontFamily: 'monospace', fontSize: '18px', color: '#1abc9c', fontStyle: 'bold', stroke: '#000000', strokeThickness: 5 }).setOrigin(.5).setDepth(25);
+  S.sc.tweens.add({ targets: t, alpha: 0, delay: 1800, duration: 400, onComplete: () => t.destroy() });
+}
+function addHS() {
+  if (S.pts <= 0) return -1;
+  const e = { n: S.hum.name, t: S.hum.t, s: S.pts };
+  S.hs.push(e); S.hs.sort((a, b) => b.s - a.s); S.hs = S.hs.slice(0, 10); save();
+  return S.hs.indexOf(e);
+}
+// Ranking cercano: muestra a quién tienes justo arriba en vez de solo el primer lugar
+function rankTxt(r, y) {
+  tx(W / 2, y, 'PUNTOS: ' + S.pts + (r >= 0 ? '  ·  PUESTO #' + (r + 1) + ' DE ' + S.hs.length : '  ·  FUERA DEL TOP 10'), 16, '#e1ff00');
+  const up = r > 0 ? S.hs[r - 1] : r < 0 ? S.hs[S.hs.length - 1] : null;
+  tx(W / 2, y + 26, r === 0 ? '¡ERES EL RÉCORD DE LA MÁQUINA!' : up ? 'TE FALTARON ' + (up.s - S.pts + 1) + ' PUNTOS PARA SUPERAR A ' + up.n : '', 13, '#f7ffd8');
 }
 
 // ---------- Escena ----------
@@ -157,7 +184,7 @@ function mkF(i, t, look, name, cpu) {
   return f;
 }
 function reset(f) {
-  Object.assign(f, { x: f.i ? 560 : 240, y: GR, vx: 0, vy: 0, kx: 0, face: f.i ? -1 : 1, hp: 100, ghp: 100, atk: null, at: 0, hd: 0, lh: -1, cast: 0, cd: [0, 0], hs: 0, stun: 0, inv: 0, sil: 0, slow: 0, sh: 0, buff: 0, ctr: 0, blk: 0, cr: 0, gr: 1, ko: 0, fl: 0, ait: 0, aiI: null, win: 0 });
+  Object.assign(f, { x: f.i ? 560 : 240, y: GR, vx: 0, vy: 0, kx: 0, face: f.i ? -1 : 1, hp: 100, ghp: 100, atk: null, at: 0, hd: 0, lh: -1, cast: 0, cd: [0, 0], hs: 0, stun: 0, inv: 0, sil: 0, slow: 0, sh: 0, buff: 0, ctr: 0, blk: 0, cr: 0, gr: 1, ko: 0, fl: 0, ait: 0, aiI: null, win: 0, cb: 0, cbt: 0, tk: 0, iv: 0 });
 }
 function startAtk(f, a) { f.atk = a; f.at = 0; f.hd = 0; f.lh = -1; if (f.gr && !a.dash) f.vx = 0; }
 function inRange(f, o, a) {
@@ -236,6 +263,7 @@ function ai(f, o, dt) {
     else if (Math.random() < .05) I.u = 1;
   } else {
     const r = Math.random();
+    if (Math.random() < .4 - lv * .08) { f.aiI = Object.assign({}, I); return I; }
     if (r < .33) I.b[0] = 1; else if (r < .58) I.b[1] = 1; else if (r < .68 && f.cd[1] <= 0) I.b[3] = 1;
     else if (r < .8) I[away] = 1; else if (r < .86) I.u = 1; else if (r < .92) I.d = 1;
   }
@@ -245,7 +273,7 @@ function ai(f, o, dt) {
 }
 
 function step(f, o, dt) {
-  for (const k of ['hs', 'stun', 'inv', 'sil', 'slow', 'sh', 'buff', 'ctr', 'fl', 'cast']) if (f[k] > 0) f[k] -= dt;
+  for (const k of ['hs', 'stun', 'inv', 'sil', 'slow', 'sh', 'buff', 'ctr', 'fl', 'cast', 'cbt', 'iv']) if (f[k] > 0) f[k] -= dt;
   f.cd[0] -= dt; f.cd[1] -= dt;
   f.anim += dt;
   const live = S.ph === 'fight' && !f.ko && !f.win;
@@ -297,7 +325,7 @@ function step(f, o, dt) {
 }
 
 function hurt(o, d, f, fx) {
-  if (o.ko || S.ph !== 'fight') return;
+  if (o.ko || S.ph !== 'fight' || o.iv > 0) return;
   if (o.ctr > 0) {
     o.ctr = 0; flt(o, '¡REGLA VIOLADA!', '#75aadb'); snd('ctr'); spark(o.x, o.y - 100, 0x75aadb, 14);
     hurt(f, Math.max(20, d * 2), o, { stun: .6 });
@@ -312,6 +340,10 @@ function hurt(o, d, f, fx) {
   } else {
     if (o.sh > 0) d *= .5;
     o.hs = .22; o.kx = dir * 240; o.fl = .12; o.atk = null;
+    f.cb = f.cbt > 0 ? f.cb + 1 : 1; f.cbt = .9;
+    if (f.cb >= 5 && !f.cpu) unlock(2);
+    if (f.cb >= 4 && f.cb % 4 === 0) { o.kx = dir * 520; o.iv = .5; o.hs = .3; }
+    if (S.np === 1 && f.i === 0 && f.cb >= 3) S.pts += f.cb * 50;
     if (fx.stun) o.stun = fx.stun;
     if (fx.inv) { o.inv = fx.inv; flt(o, '¿EH?', '#c39bd3'); }
     if (fx.sil) { o.sil = fx.sil; flt(o, '[REDACTADO]', '#aaaaaa'); }
@@ -321,7 +353,8 @@ function hurt(o, d, f, fx) {
     spark(o.x, o.y - 95, 0xffe066); snd('hit'); S.hst = d >= 12 ? .12 : .06; S.imp.push({ x: o.x - dir * 18, y: o.y - 100, l: .12, s: d >= 12 ? 1.6 : 1 });
     if (d >= 12) S.sc.cameras.main.shake(120, .006);
   }
-  o.hp = Math.max(0, o.hp - d);
+  o.hp = Math.max(0, o.hp - d); o.tk += d;
+  if (S.np === 1 && f.i === 0) S.pts += Math.round(d * 10);
   f.m = Math.min(100, f.m + d * .9); o.m = Math.min(100, o.m + d * .5);
   if (o.hp <= 0) {
     o.ko = 1; o.gr = 0; o.vy = -420; o.kx = dir * 260;
@@ -584,7 +617,9 @@ function initTitle() {
   S.b1 = tx(W / 2, 285, 'START 1 · ARCADE (1 JUGADOR)', 22);
   S.b2 = tx(W / 2, 320, 'START 2 · VERSUS (2 JUGADORES)', 22);
   const rk = Object.keys(S.tw).filter(k => S.tw[k] > 0).sort((a, b) => S.tw[b] - S.tw[a]).slice(0, 3);
-  tx(W / 2, 372, rk.length ? 'EQUIPOS CON MÁS VICTORIAS: ' + rk.map(k => TEAMS[k].n + ' ' + S.tw[k]).join(' · ') : 'GANA PELEAS PARA SUBIR A TU EQUIPO AL RANKING', 12, '#b8c48d');
+  tx(W / 2, 358, rk.length ? 'COPA DE SEDES: ' + rk.map(k => TEAMS[k].n + ' ' + S.tw[k]).join(' · ') : 'COPA DE SEDES: GANA PELEAS PARA SUMARLE A TU EQUIPO', 12, '#b8c48d');
+  tx(W / 2, 378, 'LOGROS ' + pc(S.ach.a) + '/8 · FINALES ' + pc(S.ach.e) + '/3', 12, '#1abc9c');
+  tx(W / 2, 398, S.hs.length ? 'RÉCORDS: ' + S.hs.slice(0, 3).map((e, i) => (i + 1) + '. ' + e.n + ' ' + e.s).join('  ') : 'RÉCORDS: TODAVÍA NADIE. SÉ EL PRIMERO.', 12, '#e1ff00');
   S.demo = TEAMS.slice(0, 7).map((t, j) => { const f = mkF(0, j, t.m[j % 5], '', 0); f.face = j < 3 ? 1 : -1; return f; });
 }
 function updTitle(dt) {
@@ -668,7 +703,7 @@ function updSel(dt) {
         go('vs');
       } else {
         S.lad = [0, 1, 2, 3, 4, 5, 6].filter(x => x !== a.t).sort(() => Math.random() - .5).slice(0, 3).concat([7, 8]);
-        S.li = 0; S.ch = []; go('story');
+        S.li = 0; S.ch = []; S.pts = 0; go('story');
       }
     }
   } else S.rt = 0;
@@ -764,6 +799,8 @@ function initFight() {
     tx(L ? 30 : 770, 588, '3 ' + T.p[0] + ' · 4 ' + T.p[1] + ' · 5 ' + T.p[2], 10, '#f7ffd8', L ? 0 : 1);
   });
   S.tt = tx(W / 2, 32, '36', 34, '#ffffff');
+  S.ptT = tx(W / 2, 64, '', 12, '#e1ff00');
+  S.cT = [tx(130, 120, '', 24, '#ff6ec7'), tx(670, 120, '', 24, '#ff6ec7')];
   if (S.stage === 6) tx(675, 145, '36:00', 30, '#e1ff00');
   S.mt = 0; S.mi = 0; S.photo = 0; S.na = 6;
   startRound();
@@ -782,7 +819,11 @@ function startRound() {
   later(1, () => { ann('¡A HACKEAR!', '#e1ff00', 500); snd('ok'); });
 }
 function endRound(w) {
-  if (w) { w.wins++; w.win = 1; }
+  if (w) {
+    w.wins++; w.win = 1;
+    if (!w.cpu && w.tk < .5) { unlock(1); flt(w, '¡PERFECTO!', '#e1ff00'); }
+    if (S.np === 1 && w.i === 0) S.pts += 500 + Math.ceil(S.time) * 20 + (w.tk < .5 ? 2000 : 0);
+  }
   S.ph = 'end'; S.pt = 2.6; S.pr = []; S.tm = [];
 }
 function updFight(dt) {
@@ -869,8 +910,16 @@ function hud() {
     }
   });
   S.tt.setText(String(Math.ceil(Math.max(0, S.time)))).setColor(S.time < 10 ? '#ff5050' : '#ffffff');
+  S.ptT.setText(S.np === 1 ? 'PUNTOS ' + S.pts : '');
+  S.F.forEach((f, i) => S.cT[i].setText(f.cbt > 0 && f.cb >= 2 ? f.cb + ' GOLPES' : '').setScale(1 + Math.max(0, f.cbt - .7)));
 }
 function matchOver(w) {
+  if (!w.cpu) {
+    unlock(0); S.ach.t |= 1 << w.t;
+    if (pc(S.ach.t) >= 4) unlock(7);
+    if (S.F[1 - w.i].t === 7) unlock(3);
+    save();
+  }
   if (S.np === 1) {
     if (w.i === 0) {
       S.tw[w.t] = (S.tw[w.t] || 0) + 1; save();
@@ -897,12 +946,13 @@ function initOver() {
   S.bg.fillStyle(0x14040a); S.bg.fillRect(0, 0, W, H);
   tx(W / 2, 200, '¿CONTINUAR?', 50, '#ff5050');
   S.ct = tx(W / 2, 300, '9', 80, '#ffffff');
-  tx(W / 2, 420, 'START 1 · SEGUIR HACKEANDO', 18, '#e1ff00');
+  tx(W / 2, 420, 'START 1 · SEGUIR HACKEANDO (LOS PUNTOS VUELVEN A 0)', 16, '#e1ff00');
+  rankTxt(addHS(), 480);
 }
 function updOver() {
   const n = 9 - Math.floor(S.st);
   S.ct.setText(String(Math.max(0, n)));
-  if (pr('START1')) nextArcade();
+  if (pr('START1')) { S.pts = 0; nextArcade(); }
   else if (n < 0) go('title');
 }
 function initEnd() {
@@ -914,6 +964,10 @@ function initEnd() {
   tx(W / 2, 336, e[0], 17, '#ff6ec7');
   tx(W / 2, 384, e[1] + '\n' + (c[1] === 0 ? 'EL PIVOTE SALIÓ BIEN.' : 'DEFENDISTE LA IDEA HASTA EL FINAL.'), 13, '#f7ffd8');
   tx(W / 2, 580, 'START · VOLVER AL INICIO', 14, '#b8c48d');
+  S.ach.e |= 1 << (c[2] === 1 ? 2 : c[0] === 0 ? 0 : 1);
+  unlock(4); if (c[0] === 1) unlock(5); if (S.ach.e === 7) unlock(6);
+  rankTxt(addHS(), 60);
+  tx(W / 2, 128, 'FINALES DESCUBIERTOS: ' + pc(S.ach.e) + ' DE 3', 13, '#b8c48d');
   S.e = [mkF(0, S.hum.t, S.hum.lk, '', 0), mkF(1, 7, '1000', '', 0)];
   S.e.forEach(f => { f.win = 1; f.face = 1; });
 }
