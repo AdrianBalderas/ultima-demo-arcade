@@ -563,6 +563,17 @@ function prop(g, id) {
   for (const ol of [1, 0]) for (const [dx, dy, w, h, c] of L) { g.fillStyle(ol ? 0x1d1430 : c); g.fillRect(X + (dx - ol) * U, Y + (dy - ol) * U, (w + 2 * ol) * U, (h + 2 * ol) * U); }
 }
 
+
+// Power-up for each monument. Nacho takes the photo (flash) and the fighter gets a boost.
+function boost(f, id) {
+  S.fl = .3; snd('heal'); spark(640, GR - 40, 0xf2ff00, 16);
+  if (id < 2) { f.sh = 5; flt(f, '¡BOOST OBSERVATORIO: ESCUDO!', '#f2ff00'); }
+  else if (id === 2) { f.hp = Math.min(100, f.hp + 20); flt(f, '¡BOOST MATE: +20 VIDA!', '#f2ff00'); }
+  else if (id === 3) { f.buff = 6; flt(f, '¡BOOST CALAVERA: MÁS DAÑO!', '#f2ff00'); }
+  else if (id === 4) { f.m = 100; flt(f, '¡BOOST CHIVA: SÚPER LISTO!', '#f2ff00'); }
+  else { f.cd = [0, 0]; f.m = Math.min(100, f.m + 40); flt(f, '¡BOOST GUACAMAYA: PODERES LISTOS!', '#f2ff00'); }
+}
+
 function nacho(g, x, y, s, flash, d = 1) {
   const R = (dx, dy, w, h, c) => { g.fillStyle(c); g.fillRect(x + (d > 0 ? dx : -dx - w) * s, y + dy * s, w * s, h * s); };
   R(-4, -10, 3, 10, 0x2d3047); R(1, -10, 3, 10, 0x2d3047); R(-5, -20, 10, 10, 0x1abc9c);
@@ -713,7 +724,7 @@ function stageFx(g, id) {
   if (id === 4) { g.lineStyle(1, 0xaabbcc, .6); for (let k = 0; k < 70; k++) { const x = (k * 137 + S.T * 90) % W, y = (k * 91 + S.T * 650) % H; g.lineBetween(x, y, x - 3, y + 12); } }
   if (id === 7 && Math.random() < .08) { g.fillStyle(0xff3b3b, .3); g.fillRect(0, rnd(0, GR), W, rnd(3, 14)); }
   const fl = (S.T % 4) < .12;
-  if (id < 6) { prop(g, id); nacho(g, 745, GR - 4, 2.4, fl, -1); } else nacho(g, 750, GR - 4, 2.4, fl);
+  if (id < 6) { if (!(S.pkt > 0)) { g.fillStyle(0xf2ff00, .18 + Math.sin(S.T * 6) * .1); g.fillCircle(640, GR - 30, 44); prop(g, id); } nacho(g, 745, GR - 4, 2.4, fl, -1); } else nacho(g, 750, GR - 4, 2.4, fl);
 }
 
 
@@ -931,7 +942,7 @@ function initFight() {
 }
 function startRound() {
   S.F.forEach(reset);
-  S.pr = []; S.walls = []; S.tm = []; S.pa = []; S.imp = []; S.hst = 0;
+  S.pr = []; S.walls = []; S.tm = []; S.pa = []; S.imp = []; S.hst = 0; S.pkt = 4;
   S.time = 36; S.ph = 'intro'; S.pt = 1.8;
   if (S.np === 1) {
     const h = S.F[0], c = S.ch;
@@ -981,6 +992,7 @@ function updFight(dt) {
       if (S.ph !== 'fight') break;
     }
     for (let i = S.walls.length - 1; i >= 0; i--) if ((S.walls[i].l -= dt) <= 0) S.walls.splice(i, 1);
+    if (S.stage < 6 && (S.pkt -= dt) <= 0) for (const f of S.F) if (!f.ko && f.gr && Math.abs(f.x - 640) < 36) { boost(f, S.stage); S.pkt = 12; break; }
     // Nacho ayuda a Rafa
     if (b.t === 7) {
       S.na -= dt;
