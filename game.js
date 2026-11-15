@@ -25,17 +25,19 @@ const HC = [0x1b1b1b, 0x4a2c17, 0x7b4a26, 0xc98b3c, 0xe8c872, 0x8e8e8e, 0xb03a2e
 const CH = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ0123456789 -';
 // look = piel, color de pelo, peinado (0 corto, 1 largo, 2 rizado, 3 cola, 4 gorra), lentes
 const TEAMS = [
-  { n: 'LITTLE DRAGONS', c: 'SANTIAGO 2024', col: 0xff7b29, ac: 0xffe066, st: 0, p: ['MONEDA DE FUEGO', 'EVOLUCIÓN', 'INTERÉS COMPUESTO'], m: ['1000', '2210', '0121', '3430', '1641'] },
+  { n: 'LITTLE DRAGONS', c: 'SANTIAGO 2024', col: 0x2563eb, ac: 0xffe066, st: 0, p: ['MONEDA DE FUEGO', 'EVOLUCIÓN', 'INTERÉS COMPUESTO'], m: ['1000', '2210', '0121', '3430', '1641'] },
   { n: 'HEDGIE', c: 'SANTIAGO 2025', col: 0x27ae60, ac: 0xffffff, st: 1, p: ['COPY TRADE', 'COBERTURA', 'VENTA EN CORTO'], m: ['2101', '0010', '3220', '1530', '4340'] },
-  { n: 'RECORD.AI', c: 'SANTIAGO 2025', col: 0x00b4e6, ac: 0x0b0f03, st: 1, p: ['ESCANEO FACIAL', '¿CÓMO TE LLAMABAS?', 'RECUERDO TOTAL'], m: ['1001', '3111', '0321', '2031', '4241'] },
-  { n: 'TRANQUERA', c: 'BUENOS AIRES 2026', col: 0x75aadb, ac: 0xffffff, st: 2, p: ['TRANQUERA CERRADA', '[REDACTADO]', 'REGLA VIOLADA'], m: ['1100', '2010', '0420', '3230', '1141'] },
-  { n: 'DOMINIKITO', c: 'CDMX 2026', col: 0xe84393, ac: 0xffe066, st: 3, p: ['ELIGE TU CAMINO', 'CUENTO VIVO', 'PERFIL EMOCIONAL'], m: ['2000', '3111', '1220', '4031', '2340'] },
-  { n: 'WOKI', c: 'BOGOTÁ 2026', col: 0xf5c400, ac: 0x1b1b1b, st: 4, p: ['SEÑAL LORA', 'SOS', 'RESCATE'], m: ['3000', '2110', '1221', '4430', '2541'] },
-  { n: 'MUS3O', c: 'CARACAS 2026', col: 0x8e44ad, ac: 0xffe066, st: 5, p: ['SALA NUEVA', 'MODO EXAMEN', 'PALACIO DE LA MEMORIA'], m: ['2010', '3131', '1220', '4031', '2340'] },
+  { n: 'RECORD.AI', c: 'SANTIAGO 2025', col: 0x3a3a3a, ac: 0xe8e8e8, st: 1, p: ['ESCANEO FACIAL', '¿CÓMO TE LLAMABAS?', 'RECUERDO TOTAL'], m: ['1001', '3111', '0321', '2031', '4241'] },
+  { n: 'TRANQUERA', c: 'BUENOS AIRES 2026', col: 0x2b2a26, ac: 0xefede6, st: 2, p: ['TRANQUERA CERRADA', '[REDACTADO]', 'REGLA VIOLADA'], m: ['1100', '2010', '0420', '3230', '1141'] },
+  { n: 'DOMINIKITO', c: 'CDMX 2026', col: 0x5c3cd5, ac: 0xffffff, st: 3, p: ['ELIGE TU CAMINO', 'CUENTO VIVO', 'PERFIL EMOCIONAL'], m: ['2000', '3111', '1220', '4031', '2340'] },
+  { n: 'WOKI', c: 'BOGOTÁ 2026', col: 0xf2f2f2, ac: 0x111111, st: 4, p: ['SEÑAL LORA', 'SOS', 'RESCATE'], m: ['3000', '2110', '1221', '4430', '2541'] },
+  { n: 'MUS3O', c: 'CARACAS 2026', col: 0x8e2a1e, ac: 0xd9a441, st: 5, p: ['SALA NUEVA', 'MODO EXAMEN', 'PALACIO DE LA MEMORIA'], m: ['2010', '3131', '1220', '4031', '2340'] },
   { n: 'RAFA', c: 'EL ORGANIZADOR', col: 0xe1ff00, ac: 0x1b1b1b, st: 6, p: ['CAMBIO DE LOGÍSTICA', 'CRONOGRAMA', 'DE CERO A PRODUCTO'], m: ['1000'] },
   { n: 'EL DEADLINE', c: '36 HORAS', col: 0xff3b3b, ac: 0xffffff, st: 7, p: ['TIC TAC', 'ÚLTIMO COMMIT', 'DEPLOY A LAS 4AM'], m: ['0000'] },
+  { n: 'EL PLÁTANO', c: 'COMODÍN', col: 0xffe135, ac: 0x6d4c2f, st: 6, p: ['CÁSCARA', 'POTASIO', 'LLUVIA DE PLÁTANOS'], m: ['1000', '3100', '0200', '4300', '2400'] },
 ];
 TEAMS.forEach(t => { t.m = t.m.map((x, i) => x + '10201'[i]); });
+const SELT = [0, 1, 2, 3, 4, 5, 6, 9], isTeam = t => t < 7 || t === 9;
 const SN = ['SANTIAGO 2024', 'SANTIAGO 2025 · MUT, LAS CONDES', 'BUENOS AIRES 2026', 'CDMX 2026', 'BOGOTÁ 2026', 'CARACAS 2026', 'PLATANUS HQ', 'EL DEADLINE'];
 const ROOT = [110, 98, 123, 110, 92, 104, 130, 82];
 const PAT = [0, 0, 12, 0, 7, 0, 10, 12, 0, 0, 12, 0, 5, 7, 3, 5];
@@ -104,11 +106,11 @@ async function load() {
     const a = await ST.get('phf-names-v1');
     if (a && a.found && a.value && Array.isArray(a.value.n)) S.names = a.value.n.slice(0, 2).map(x => typeof x === 'string' ? x.split('').filter(ch => CH.includes(ch)).join('').slice(0, 8) : '');
     const b = await ST.get('phf-wins-v1');
-    if (b && b.found && b.value && typeof b.value === 'object') for (const k in b.value) if (+k >= 0 && +k < 7 && typeof b.value[k] === 'number') S.tw[k] = b.value[k];
+    if (b && b.found && b.value && typeof b.value === 'object') for (const k in b.value) if (isTeam(+k) && typeof b.value[k] === 'number') S.tw[k] = b.value[k];
     const c = await ST.get('phf-ach-v1');
     if (c && c.found && c.value) for (const k of ['a', 'e', 't']) if (typeof c.value[k] === 'number') S.ach[k] = c.value[k] | 0;
     const d = await ST.get('phf-hs-v1');
-    if (d && d.found && Array.isArray(d.value)) S.hs = d.value.filter(e => e && typeof e.n === 'string' && typeof e.s === 'number' && e.t >= 0 && e.t < 7).map(e => ({ n: e.n.slice(0, 8), t: e.t | 0, s: e.s | 0 })).slice(0, 10);
+    if (d && d.found && Array.isArray(d.value)) S.hs = d.value.filter(e => e && typeof e.n === 'string' && typeof e.s === 'number' && isTeam(e.t)).map(e => ({ n: e.n.slice(0, 8), t: e.t | 0, s: e.s | 0 })).slice(0, 10);
     if (S.scr === 'title') go('title');
   } catch (e) { /* sin guardado */ }
 }
@@ -230,6 +232,9 @@ const PW = [
   [f => { shoot(f, 'hand', { d: 6, y: f.y - 125 }); later(.2, () => shoot(f, 'hand', { d: 6, y: f.y - 60 })); },
     f => startAtk(f, { k: 'd', s: .1, a: .3, r: .3, rng: 60, d: 14, dash: 750, y: -90 }),
     f => { const o = opp(f); for (let j = 0; j < 8; j++) later(j * .1, () => shoot(f, 'rock', { x: o.x + rnd(-90, 90), y: -20, vx: 0, vy: 150, g: 1400, d: 4, l: 3, nc: 1 })); }],
+  [f => shoot(f, 'peel', { x: clampX(f.x + f.face * 60), y: GR - 6, vx: 0, d: 4, l: 6, w: 30, h: 12, nc: 1, fx: { stun: 1.1, slip: 1, ub: 1 } }),
+    f => { f.buff = 5; f.hp = Math.min(100, f.hp + 6); flt(f, '+POTASIO', '#ffe135'); snd('heal'); },
+    f => { const o = opp(f); for (let j = 0; j < 7; j++) later(j * .11, () => shoot(f, 'ban', { x: o.x + rnd(-80, 80), y: -20, vx: 0, vy: 180, g: 1400, d: 4, l: 3, nc: 1 })); }],
 ];
 
 function cast(f, k) {
@@ -350,6 +355,7 @@ function hurt(o, d, f, fx) {
     if (fx.inv) { o.inv = fx.inv; flt(o, '¿EH?', '#c39bd3'); }
     if (fx.sil) { o.sil = fx.sil; flt(o, '[REDACTADO]', '#aaaaaa'); }
     if (fx.slow) o.slow = fx.slow;
+    if (fx.slip) flt(o, '¡SE RESBALÓ!', '#ffe135');
     if (fx.drain) o.m = Math.max(0, o.m - fx.drain);
     if (fx.time) { S.time = Math.max(1, S.time - fx.time); flt(o, '-3 SEG', '#e1ff00'); }
     spark(o.x, o.y - 95, 0xffe066); snd('hit'); S.hst = d >= 12 ? .12 : .06; S.imp.push({ x: o.x - dir * 18, y: o.y - 100, l: .12, s: d >= 12 ? 1.6 : 1 });
@@ -389,7 +395,7 @@ function drawF(g, f, X, Y, sc = 1) {
   X = Math.round(X / U) * U; Y = Math.round(Y / U) * U;
   const ps = pose(f), W8 = 0xffffff, sk = f.fl > 0 ? W8 : SK[L[0]], hc = HC[L[1]], hs = L[2];
   const sh = f.fl > 0 ? W8 : T.col, sh2 = shd(sh), dk = 0x15151f;
-  const pa = f.fl > 0 ? W8 : lerpC(T.col, 0x1d1430, .72);
+  const pa = f.fl > 0 ? W8 : t === 9 ? 0xe6c200 : lerpC(T.col, 0x1d1430, .72);
   // complexion: 0 slim, 1 medium, 2 broad
   const bd = L[4] === undefined ? 1 : L[4], tw = [9, 10, 12][bd], tl = -(tw >> 1), lw = bd === 2 ? 4 : 3;
   const gl = L[3] || t === 2 || t === 6;
@@ -424,20 +430,21 @@ function drawF(g, f, X, Y, sc = 1) {
     }
     const b = cr + bob + (ps === 'jump' ? -4 : 0), y = d => d + b, x = d => d + ln;
     // behind the body: cape (Dominikito), tail (Little Dragons), antenna (WOKI), hood (Rafa)
-    if (t === 4) R(x(tl - 2), y(-19), 3, 15, lerpC(sh, 0x6b0f3a, .45));
+    if (t === 4) R(x(tl - 2), y(-19), 3, 15, lerpC(sh, 0x2e168f, .5));
     if (t === 0) { R(x(tl - 3), y(-13), 3, 2, sh); R(x(tl - 5), y(-15), 2, 2, sh); if (!ol) R(x(tl - 6), y(-16), 1, 1, 0xffe066); }
     if (t === 5) { R(x(tl), y(-28), 1, 8, dk); if (!ol) R(x(tl), y(-29), 1, 1, S.T % 1 < .5 ? 0xff3b3b : 0x661111); }
     if (t === 7) R(x(-6), y(-22), 3, 3, sh2);
     // torso: open jacket in team color with inner shirt
     B(x(tl), y(-20), tw, 9, sh);
     if (!ol) {
-      R(x(-1), y(-20), 3, 8, t === 1 ? W8 : lerpC(T.ac, W8, .25));
+      if (t === 9) { R(x(tl + 2), y(-17), 1, 1, 0x8a6a1f); R(x(tl + tw - 3), y(-14), 1, 1, 0x8a6a1f); R(x(-1), y(-19), 1, 1, 0x8a6a1f); }
+      else R(x(-1), y(-20), 3, 8, t === 1 ? W8 : lerpC(T.ac, W8, .25));
       if (t === 1) R(x(0), y(-19), 1, 6, 0xc0392b);
-      if (t === 3) { R(x(tl + 1), y(-20), 1, 9, W8); R(x(tl + tw - 2), y(-20), 1, 9, W8); }
+      if (t === 3) { R(x(tl + 1), y(-20), 1, 9, T.ac); R(x(tl + tw - 2), y(-20), 1, 9, T.ac); }
       if (t === 0) { R(x(tl + 1), y(-17), 1, 1, lit(sh)); R(x(tl + 2), y(-14), 1, 1, lit(sh)); }
-      if (t === 5) { R(x(tl), y(-16), tw, 1, 0xdfe6e9); R(x(tl), y(-13), tw, 1, 0xdfe6e9); }
+      if (t === 5) { R(x(tl), y(-16), tw, 1, 0x111111); R(x(tl), y(-13), tw, 1, 0x111111); }
       if (t === 7) { R(x(-2), y(-16), 1, 1, dk); R(x(-1), y(-15), 3, 1, dk); R(x(2), y(-16), 1, 1, dk); }
-      for (let k = 0; k < tw; k++) R(x(tl + k), y(-11), 1, 1, t === 3 ? (k & 1 ? 0xff3b3b : W8) : dk);
+      for (let k = 0; k < tw; k++) R(x(tl + k), y(-11), 1, 1, t === 3 ? (k & 1 ? T.ac : dk) : dk);
     }
     // head with ear
     B(x(-4), y(-29), 9, 9, sk);
@@ -454,25 +461,30 @@ function drawF(g, f, X, Y, sc = 1) {
       R(x(-1), y(-23), 1, 1, lerpC(sk, 0xff6b6b, .4));
       if (gl && !hurt) {
         R(x(-1), y(-26), 7, 1, dk);
-        const l1 = t === 6 ? 0xff3355 : t === 2 ? 0x66ddff : 0x9fb4c8, l2 = t === 6 ? 0x33e0ff : l1;
+        const l1 = t === 6 ? 0xff3355 : t === 2 ? 0xffffff : 0x9fb4c8, l2 = t === 6 ? 0x33e0ff : l1;
         R(x(0), y(-25), 2, 1, l1); R(x(3), y(-25), 2, 1, l2);
       }
-      if (t === 2) { R(x(-2), y(-24), 1, 2, 0x00b4e6); if ((S.T * 3 | 0) % 4 === 0) R(x(-4), y(-29 + ((S.T * 30) | 0) % 9), 9, 1, 0x66ddff); }
+      if (t === 2) { R(x(-2), y(-24), 1, 2, 0xe8e8e8); if ((S.T * 3 | 0) % 4 === 0) R(x(-4), y(-29 + ((S.T * 30) | 0) % 9), 9, 1, 0xffffff); }
       if (f.sil > 0) R(x(2), y(-23), 4, 2, 0x000000);
     }
     // hair
     const H2 = (dx, dy, w, h) => R(x(dx), y(dy), w, h, hc);
-    if (hs === 0) { H2(-4, -30, 9, 2); H2(-4, -28, 2, 3); }
+    if (t === 9) {
+      R(x(-5), y(-32), 11, 3, sh); R(x(-5), y(-29), 2, 10, sh); R(x(-3), y(-33), 6, 1, sh);
+      R(x(0), y(-36), 2, 3, 0x6d4c2f); R(x(1), y(-37), 2, 1, 0x6d4c2f);
+      R(x(tl - 1), y(-22), 2, 4, sh); R(x(tl + tw - 1), y(-22), 2, 4, sh);
+    }
+    else if (hs === 0) { H2(-4, -30, 9, 2); H2(-4, -28, 2, 3); }
     else if (hs === 1) { H2(-5, -30, 10, 2); H2(-5, -28, 3, 10); }
     else if (hs === 2) { H2(-6, -33, 12, 5); H2(-6, -28, 3, 4); }
     else if (hs === 3) { H2(-4, -30, 9, 2); H2(-4, -28, 2, 2); H2(-7, -29, 3, 2); H2(-8, -28, 2, 6); }
     else { R(x(-4), y(-31), 9, 2, sh2); R(x(3), y(-30), 4, 1, sh2); H2(-4, -29, 2, 2); }
-    if (!ol && hs !== 4) R(x(-1), y(hs === 2 ? -33 : -30), 3, 1, lit(hc));
+    if (!ol && hs !== 4 && t !== 9) R(x(-1), y(hs === 2 ? -33 : -30), 3, 1, lit(hc));
     // team signature accessory
     if (t === 0) { R(x(-2), y(-32 - (hs === 2 ? 2 : 0)), 2, 2, 0xfff1c1); R(x(2), y(-32 - (hs === 2 ? 2 : 0)), 2, 2, 0xfff1c1); }
     if (t === 1) { H2(-7, -30, 3, 2); H2(-8, -28, 3, 2); H2(-7, -26, 2, 2); }
-    if (t === 5) { R(x(-5), y(-32), 11, 3, 0xf5c400); R(x(-4), y(-33), 9, 1, 0xf5c400); R(x(4), y(-30), 3, 1, 0xc99a00); }
-    if (t === 6) { R(x(-5), y(-32), 10, 2, 0x5b2c6f); R(x(-1), y(-33), 2, 1, 0x5b2c6f); }
+    if (t === 5) { R(x(-5), y(-32), 11, 3, 0xf5f5f5); R(x(-4), y(-33), 9, 1, 0xf5f5f5); R(x(4), y(-30), 3, 1, 0x111111); }
+    if (t === 6) { R(x(-5), y(-32), 10, 2, 0xd9a441); R(x(-1), y(-33), 2, 1, 0xd9a441); }
     if (t === 7 && !ol) { R(x(-5), y(-27), 1, 4, dk); R(x(-5), y(-23), 6, 1, dk); R(x(1), y(-23), 1, 1, 0xff3b3b); }
     // arms: always on guard, fists up
     const guard = () => { R(x(1), y(-16), 3, 2, sh2); R(x(4), y(-17), 2, 2, sk); R(x(3), y(-19), 3, 2, sh); R(x(5), y(-22), 2, 4, sh); R(x(5), y(-24), 2, 2, sk); };
@@ -561,7 +573,7 @@ function drawP(g, p) {
       g.fillStyle(p.k === 'q' ? 0xffffff : 0x8e44ad); g.fillRect(x - 5, y - 9, 10, 3); g.fillRect(x + 3, y - 9, 3, 8); g.fillRect(x - 2, y - 2, 5, 3); g.fillRect(x - 2, y + 5, 4, 4); break;
     case 'red': g.fillStyle(0x000000); g.fillRect(x - 20, y - 7, 40, 14); g.lineStyle(2, 0xffffff); g.strokeRect(x - 20, y - 7, 40, 14); break;
     case 'book': g.fillStyle(0x8e5a2f); g.fillRect(x - 11, y - 8, 22, 16); g.fillStyle(0xffffff); g.fillRect(x - 9, y - 6, 18, 2); g.fillStyle(0xe84393); g.fillRect(x - 1, y - 8, 2, 16); break;
-    case 'buddy': { const s = Math.round(Math.sin(S.T * 20) * 2); g.fillStyle(0xe84393); g.fillRect(x - 10, y - 14, 20, 14); g.fillRect(x + d * 6 - 4, y - 22, 10, 10); g.fillStyle(0xffffff); g.fillRect(x + d * 8, y - 19, 3, 3); g.fillStyle(0x2d3047); g.fillRect(x - 8 + s, y, 5, 6); g.fillRect(x + 3 - s, y, 5, 6); break; }
+    case 'buddy': { const s = Math.round(Math.sin(S.T * 20) * 2); g.fillStyle(0x9c7cf6); g.fillRect(x - 10, y - 14, 20, 14); g.fillRect(x + d * 6 - 4, y - 22, 10, 10); g.fillStyle(0xffffff); g.fillRect(x + d * 8, y - 19, 3, 3); g.fillStyle(0x2d3047); g.fillRect(x - 8 + s, y, 5, 6); g.fillRect(x + 3 - s, y, 5, 6); break; }
     case 'heart': g.fillStyle(0xff3b8d); g.fillCircle(x - 8, y - 6, 11); g.fillCircle(x + 8, y - 6, 11); g.fillTriangle(x - 18, y - 2, x + 18, y - 2, x, y + 18); break;
     case 'wave': g.lineStyle(4, 0xf5c400); for (let k = 0; k < 3; k++) { g.beginPath(); g.arc(x - d * 20, y, 12 + k * 10, d > 0 ? -.8 : Math.PI - .8, d > 0 ? .8 : Math.PI + .8, false); g.strokePath(); } break;
     case 'rock': g.fillStyle(0x7f8c8d); g.fillRect(x - 10, y - 10, 20, 20); g.fillStyle(0x4d5656); g.fillRect(x - 10, y + 4, 20, 6); break;
@@ -569,6 +581,8 @@ function drawP(g, p) {
     case 'clip': g.fillStyle(0x8d6e4f); g.fillRect(x - 10, y - 13, 20, 26); g.fillStyle(0xffffff); g.fillRect(x - 7, y - 8, 14, 18); g.fillStyle(0x888888); g.fillRect(x - 4, y - 15, 8, 4); break;
     case 'clock': g.fillStyle(0xffffff); g.fillCircle(x, y, 13); g.lineStyle(3, 0x111111); g.strokeCircle(x, y, 13); g.lineBetween(x, y, x + Math.cos(S.T * 12) * 9, y + Math.sin(S.T * 12) * 9); break;
     case 'robot': g.fillStyle(0x95a5a6); g.fillRect(x - 30, y - 30, 60, 60); g.fillStyle(0xe1ff00); g.fillRect(x - 18, y - 16, 10, 8); g.fillRect(x + 8, y - 16, 10, 8); g.fillStyle(0x34495e); g.fillRect(x - 15, y + 8, 30, 6); g.fillRect(x - 3, y - 42, 6, 12); break;
+    case 'peel': g.fillStyle(0xffe135); g.fillRect(x - 14, y - 2, 28, 6); g.fillRect(x - 14, y - 8, 6, 6); g.fillRect(x + 8, y - 8, 6, 6); g.fillRect(x - 3, y - 10, 6, 8); g.fillStyle(0x6d4c2f); g.fillRect(x - 2, y - 13, 4, 3); break;
+    case 'ban': g.fillStyle(0xffe135); g.fillRect(x - 10, y - 2, 20, 6); g.fillRect(x - 14, y - 7, 5, 6); g.fillRect(x + 9, y - 7, 5, 6); g.fillStyle(0x6d4c2f); g.fillRect(x - 15, y - 9, 3, 3); g.fillRect(x + 12, y - 9, 3, 3); break;
     case 'hand': g.fillStyle(0x111111); g.fillRect(x - 16, y - 3, 32, 6); g.fillTriangle(x + d * 22, y, x + d * 10, y - 8, x + d * 10, y + 8); break;
   }
 }
@@ -690,11 +704,11 @@ function initTitle() {
   tx(W / 2, 358, rk.length ? 'COPA DE SEDES: ' + rk.map(k => TEAMS[k].n + ' ' + S.tw[k]).join(' · ') : 'COPA DE SEDES: GANA PELEAS PARA SUMARLE A TU EQUIPO', 12, '#b8c48d');
   tx(W / 2, 378, 'LOGROS ' + pc(S.ach.a) + '/8 · FINALES ' + pc(S.ach.e) + '/3', 12, '#1abc9c');
   tx(W / 2, 398, S.hs.length ? 'RÉCORDS: ' + S.hs.slice(0, 3).map((e, i) => (i + 1) + '. ' + e.n + ' ' + e.s).join('  ') : 'RÉCORDS: TODAVÍA NADIE. SÉ EL PRIMERO.', 12, '#e1ff00');
-  S.demo = TEAMS.slice(0, 7).map((t, j) => { const f = mkF(0, j, t.m[j % 5], '', 0); f.face = j < 3 ? 1 : -1; return f; });
+  S.demo = SELT.map((t, j) => { const f = mkF(0, t, TEAMS[t].m[j % 5], '', 0); f.face = j < 4 ? 1 : -1; return f; });
 }
 function updTitle(dt) {
   S.g.clear();
-  S.demo.forEach((f, j) => { f.anim += dt; drawF(S.g, f, 85 + j * 105, 585, .9); });
+  S.demo.forEach((f, j) => { f.anim += dt; drawF(S.g, f, 58 + j * 97, 585, .85); });
   S.b1.setAlpha(S.T % 1 < .6 ? 1 : .4);
   if (pr('START1')) { snd('ok'); S.np = 1; go('sel'); }
   else if (pr('START2')) { snd('ok'); S.np = 2; go('sel'); }
@@ -725,8 +739,8 @@ function updSel(dt) {
     const P = i ? 'P2_' : 'P1_';
     if (s.ph === 0) {
       let ch = 0;
-      if (pr(P + 'D') || pr(P + 'R')) { s.t = (s.t + 1) % 7; ch = 1; }
-      if (pr(P + 'U') || pr(P + 'L')) { s.t = (s.t + 6) % 7; ch = 1; }
+      if (pr(P + 'D') || pr(P + 'R')) { s.t = SELT[(SELT.indexOf(s.t) + 1) % 8]; ch = 1; }
+      if (pr(P + 'U') || pr(P + 'L')) { s.t = SELT[(SELT.indexOf(s.t) + 7) % 8]; ch = 1; }
       if (ch) { s.m = 0; s.lk = TEAMS[s.t].m[0].split('').map(Number); snd('sel'); }
       if (pr(P + '1')) { s.ph = 1; snd('ok'); }
     } else if (s.ph === 1) {
@@ -750,7 +764,7 @@ function updSel(dt) {
     } else if (pr(P + '6')) s.ph = 2;
     if (s.ph === 3) ready++;
     const T = TEAMS[s.t];
-    for (let k = 0; k < 7; k++) { S.g.fillStyle(TEAMS[k].col, k === s.t ? 1 : .35); S.g.fillRect(s.cx - 133 + k * 38, 60, 32, 26); if (k === s.t) { S.g.lineStyle(3, 0xffffff); S.g.strokeRect(s.cx - 135 + k * 38, 58, 36, 30); } }
+    for (let j = 0; j < 8; j++) { const k = SELT[j]; S.g.fillStyle(TEAMS[k].col, k === s.t ? 1 : .35); S.g.fillRect(s.cx - 138 + j * 35, 60, 29, 26); if (k === s.t) { S.g.lineStyle(3, 0xffffff); S.g.strokeRect(s.cx - 140 + j * 35, 58, 36, 30); } }
     s.tT.setText((s.ph === 0 ? '◄ ' : '') + T.n + (s.ph === 0 ? ' ►' : '')).setColor('#' + T.col.toString(16).padStart(6, '0'));
     s.tC.setText(T.c);
     s.tP.setText('3 · ' + T.p[0] + '\n4 · ' + T.p[1] + '\n5 · SÚPER: ' + T.p[2]);
@@ -772,7 +786,7 @@ function updSel(dt) {
         S.stage = TEAMS[Math.random() < .5 ? a.t : b.t].st; S.lv = 0;
         go('vs');
       } else {
-        S.lad = [0, 1, 2, 3, 4, 5, 6].filter(x => x !== a.t).sort(() => Math.random() - .5).slice(0, 3).concat([7, 8]);
+        S.lad = SELT.filter(x => x !== a.t).sort(() => Math.random() - .5).slice(0, 3).concat([7, 8]);
         S.li = 0; S.ch = []; S.pts = 0; go('story');
       }
     }
@@ -791,7 +805,7 @@ function nextArcade() {
 // Las peleas siguen siendo las mismas (los caminos convergen), pero las decisiones se recuerdan:
 // cambian reglas de la siguiente pelea, lo que dicen los jefes y el final.
 const HR = ['VIE 23:00 · ARRANCA EL RELOJ', 'SÁB 05:00 · LA MADRUGADA', 'SÁB 15:00 · EL PIVOTE', 'DOM 08:00 · ENSAYO CON RAFA', 'DOM 10:59 · EL DEADLINE'];
-const QT = ['¿AHORRASTE PARA ESTA PELEA?', 'COPIO TU ESTRATEGIA. COMISIÓN CERO.', 'YA ESCANEÉ TU CARA. NO ME OLVIDARÁS.', 'ESA JUGADA NO PASA LA REGLA.', 'ELIGE BIEN: ESTE CUENTO TIENE FINAL.', 'SIN INTERNET TAMBIÉN TE ENCUENTRO.', 'BIENVENIDO A MI PALACIO. HAY EXAMEN.', 'DE CERO A PRODUCTO. ¿TÚ QUÉ TRAJISTE?', 'TIC, TAC. NADIE ME HA GANADO.'];
+const QT = ['¿AHORRASTE PARA ESTA PELEA?', 'COPIO TU ESTRATEGIA. COMISIÓN CERO.', 'YA ESCANEÉ TU CARA. NO ME OLVIDARÁS.', 'ESA JUGADA NO PASA LA REGLA.', 'ELIGE BIEN: ESTE CUENTO TIENE FINAL.', 'SIN INTERNET TAMBIÉN TE ENCUENTRO.', 'BIENVENIDO A MI PALACIO. HAY EXAMEN.', 'DE CERO A PRODUCTO. ¿TÚ QUÉ TRAJISTE?', 'TIC, TAC. NADIE ME HA GANADO.', 'NADIE SOBREVIVE A LA CÁSCARA.'];
 const CHO = [
   { q: 'SON LAS 4 AM Y EL EQUIPO ESTÁ MUERTO.', a: ['DORMIR 2 HORAS', 'SEGUIR HACKEANDO'], d: ['VIDA COMPLETA,\nSIN SÚPER', 'SÚPER LLENO,\nPERO 75% DE VIDA'] },
   { q: 'UN MENTOR DICE QUE LA IDEA NO CONVENCE.', a: ['PIVOTEAR', 'DEFENDER LA IDEA'], d: ['PODERES SE RECARGAN\n30% MÁS RÁPIDO', 'GOLPES CON\n20% MÁS DAÑO'] },
@@ -844,7 +858,7 @@ function initVs() {
   [a, b].forEach((f, i) => {
     const x = 200 + i * 400, T = TEAMS[f.t];
     tx(x, 70, f.name, 30, i ? '#ff6ec7' : '#e1ff00');
-    tx(x, 104, f.t < 7 ? 'TEAM ' + T.n + ' · ' + T.c : T.c, 14, '#f7ffd8');
+    tx(x, 104, isTeam(f.t) ? 'TEAM ' + T.n + ' · ' + T.c : T.c, 14, '#f7ffd8');
     tx(x, 150, '«' + quote(f) + '»', 12, '#ffffff');
   });
   if (S.np === 1) tx(W / 2, 30, HR[S.li] + (S.li === 3 ? ' (NACHO EN LA CÁMARA)' : ''), 16, '#ffffff');
@@ -865,7 +879,7 @@ function initFight() {
   S.F.forEach((f, i) => {
     const L = !i, T = TEAMS[f.t];
     tx(L ? 30 : 770, 58, f.name, 16, '#ffffff', L ? 0 : 1);
-    tx(L ? 30 : 770, 75, f.t < 7 ? 'TEAM ' + T.n : T.c, 11, '#' + T.col.toString(16).padStart(6, '0'), L ? 0 : 1);
+    tx(L ? 30 : 770, 75, isTeam(f.t) ? 'TEAM ' + T.n : T.c, 11, '#' + T.col.toString(16).padStart(6, '0'), L ? 0 : 1);
     tx(L ? 30 : 770, 588, '3 ' + T.p[0] + ' · 4 ' + T.p[1] + ' · 5 ' + T.p[2], 10, '#f7ffd8', L ? 0 : 1);
   });
   S.tt = tx(W / 2, 32, '36', 34, '#ffffff');
