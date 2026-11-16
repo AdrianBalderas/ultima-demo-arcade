@@ -4,6 +4,8 @@
 
 // Todo el juego va dentro de una función: así el minificador acorta todos los nombres (ahorra ~2 KB)
 (() => {
+// Atajos de Math (el minificador los deja de 1 letra)
+const _mr = () => Math.random(), { min: _mn, max: _mx, sin: _ms, round: _mR, abs: _ma, PI: _mP, cos: _mc } = Math;
 const W = 800, H = 600, GR = 520;
 
 // DO NOT replace existing keys — they match the physical arcade cabinet wiring.
@@ -56,8 +58,8 @@ new Phaser.Game({
 });
 
 // ---------- Utilidades ----------
-const rnd = (a, b) => a + Math.random() * (b - a);
-const clampX = x => Math.max(40, Math.min(W - 40, x));
+const rnd = (a, b) => a + _mr() * (b - a);
+const clampX = x => _mx(40, _mn(W - 40, x));
 const held = c => S.c.h[c] === true;
 function pr(c) { if (S.c.p[c]) { S.c.p[c] = false; return true; } return false; }
 function opp(f) { return S.F[1 - f.i]; }
@@ -69,7 +71,7 @@ function lerpC(a, b, t) {
 function tx(x, y, s, sz = 16, c = '#ffffff', ox = .5) {
   const fl = S.flat, cap = fl && c === '#b8c48d';
   if (fl && (cap || c === '#e1ff00')) c = '#f2ff00';
-  const t = S.sc.add.text(x, y, s, { fontFamily: 'ui-monospace, monospace', fontSize: sz + 'px', color: c, fontStyle: 'bold', stroke: '#000000', strokeThickness: fl ? 0 : Math.max(3, sz / 5), align: 'center' }).setOrigin(ox, .5).setDepth(10);
+  const t = S.sc.add.text(x, y, s, { fontFamily: 'ui-monospace, monospace', fontSize: sz + 'px', color: c, fontStyle: 'bold', stroke: '#000000', strokeThickness: fl ? 0 : _mx(3, sz / 5), align: 'center' }).setOrigin(ox, .5).setDepth(10);
   if (fl) t.setLetterSpacing(sz < 16 ? 2 : 1).setAlpha(cap ? .55 : 1);
   S.ui.push(t);
   return t;
@@ -178,16 +180,16 @@ function go(s, arg) {
 }
 
 function update(time, delta) {
-  const dt = Math.min(delta / 1000, .05);
+  const dt = _mn(delta / 1000, .05);
   S.T += dt; S.st += dt; S.dt = dt;
   ({ title: updTitle, sel: updSel, vs: updVs, fight: updFight, res: updRes, over: updOver, end: updEnd, story: updStory, cho: updCho })[S.scr](dt);
-  if (S.fl > 0) { S.fl -= dt; S.ov.setAlpha(Math.max(0, Math.min(1, S.fl * 2.5))); } else S.ov.setAlpha(0);
+  if (S.fl > 0) { S.fl -= dt; S.ov.setAlpha(_mx(0, _mn(1, S.fl * 2.5))); } else S.ov.setAlpha(0);
   S.c.p = Object.create(null);
 }
 
 // ---------- Luchadores ----------
 function mkF(i, t, look, name, cpu) {
-  const f = { i, t, look: typeof look === 'string' ? look.split('').map(Number) : look.slice(), name, cpu, wins: 0, m: 0, anim: Math.random() * 9 };
+  const f = { i, t, look: typeof look === 'string' ? look.split('').map(Number) : look.slice(), name, cpu, wins: 0, m: 0, anim: _mr() * 9 };
   reset(f);
   return f;
 }
@@ -226,7 +228,7 @@ const PW = [
     f => shoot(f, 'buddy', { d: 10, y: GR - 14, v: 300, l: 4 }),
     f => shoot(f, 'heart', { d: 10, v: 380, w: 34, h: 30, fx: { bonus: 1 } })],
   [f => shoot(f, 'wave', { d: 7, v: 420, w: 30, h: 60, fx: { ub: 1 } }),
-    f => { f.hp = Math.min(100, f.hp + 12); flt(f, 'SOS +12', '#ff5050'); snd('heal'); },
+    f => { f.hp = _mn(100, f.hp + 12); flt(f, 'SOS +12', '#ff5050'); snd('heal'); },
     f => { const o = opp(f); for (let j = 0; j < 6; j++) later(j * .12, () => shoot(f, 'rock', { x: o.x + rnd(-60, 60), y: -20, vx: 0, vy: 200, g: 1400, d: 5, l: 3, nc: 1 })); }],
   [f => { const o = opp(f); spark(f.x, f.y - 80, 0x8e44ad, 12); f.x = clampX(o.x + (f.x < o.x ? 65 : -65)); f.face = o.x > f.x ? 1 : -1; spark(f.x, f.y - 80, 0xffe066, 12); },
     f => shoot(f, 'quiz', { d: 5, v: 400, w: 24, h: 28, fx: { stun: 1.3 } }),
@@ -238,13 +240,13 @@ const PW = [
     f => startAtk(f, { k: 'd', s: .1, a: .3, r: .3, rng: 60, d: 14, dash: 750, y: -90 }),
     f => { const o = opp(f); for (let j = 0; j < 8; j++) later(j * .1, () => shoot(f, 'rock', { x: o.x + rnd(-90, 90), y: -20, vx: 0, vy: 150, g: 1400, d: 4, l: 3, nc: 1 })); }],
   [f => shoot(f, 'peel', { x: clampX(f.x + f.face * 60), y: GR - 6, vx: 0, d: 4, l: 6, w: 30, h: 12, nc: 1, fx: { stun: 1.1, slip: 1, ub: 1 } }),
-    f => { f.buff = 5; f.hp = Math.min(100, f.hp + 6); flt(f, '+POTASIO', '#ffe135'); snd('heal'); },
+    f => { f.buff = 5; f.hp = _mn(100, f.hp + 6); flt(f, '+POTASIO', '#ffe135'); snd('heal'); },
     f => { const o = opp(f); for (let j = 0; j < 7; j++) later(j * .11, () => shoot(f, 'ban', { x: o.x + rnd(-80, 80), y: -20, vx: 0, vy: 180, g: 1400, d: 4, l: 3, nc: 1 })); }],
 ];
 
 function cast(f, k) {
   f.cast = .3;
-  if (k < 2) f.cd[k] = (k ? 4.5 : 2.2) * (f.cdm || 1); else f.m = 0;
+  if (k < 2) f.cd[k] = (k ? 4.5 : 2.2) * (f.cdm || 1); else { f.m = 0; chat('s'); hype(150); }
   PW[f.t][k](f);
   snd('pw');
   flt(f, TEAMS[f.t].p[k], k == 2 ? '#ff6ec7' : '#ffffff');
@@ -258,33 +260,33 @@ function hin(f) {
 }
 
 function incoming(f) {
-  return S.pr.some(p => p.ow !== f.i && Math.abs(p.x - f.x) < 220 && (p.x - f.x) * p.vx < 0);
+  return S.pr.some(p => p.ow !== f.i && _ma(p.x - f.x) < 220 && (p.x - f.x) * p.vx < 0);
 }
 function ai(f, o, dt) {
   f.ait -= dt;
   if (f.ait > 0 && f.aiI) { const r = Object.assign({}, f.aiI); f.aiI.b = [0, 0, 0, 0, 0, 0]; return r; }
   const lv = (S.lv || 0) + (f.t === 7 || f.t === 8 ? 1 : 0); // los jefes pelean un nivel más arriba
-  f.ait = Math.max(.05, rnd(.1, .24) - lv * .025);
+  f.ait = _mx(.05, rnd(.1, .24) - lv * .025);
   const I = { l: 0, r: 0, u: 0, d: 0, b: [0, 0, 0, 0, 0, 0] };
-  const dx = o.x - f.x, dist = Math.abs(dx), tow = dx > 0 ? 'r' : 'l', away = dx > 0 ? 'l' : 'r';
-  if (((o.atk && dist < 140) || incoming(f)) && Math.random() < .25 + lv * .12) I[away] = 1;
+  const dx = o.x - f.x, dist = _ma(dx), tow = dx > 0 ? 'r' : 'l', away = dx > 0 ? 'l' : 'r';
+  if (((o.atk && dist < 140) || incoming(f)) && _mr() < .25 + lv * .12) I[away] = 1;
   else if (dist > 115) {
     I[tow] = 1;
-    if (f.cd[0] <= 0 && Math.random() < .2 + lv * .06) I.b[2] = 1;
-    else if (Math.random() < .05) I.u = 1;
+    if (f.cd[0] <= 0 && _mr() < .2 + lv * .06) I.b[2] = 1;
+    else if (_mr() < .05) I.u = 1;
   } else {
-    const r = Math.random();
-    if (Math.random() < .4 - lv * .08) { f.aiI = Object.assign({}, I); return I; }
+    const r = _mr();
+    if (_mr() < .4 - lv * .08) { f.aiI = Object.assign({}, I); return I; }
     if (r < .33) I.b[0] = 1; else if (r < .58) I.b[1] = 1; else if (r < .68 && f.cd[1] <= 0) I.b[3] = 1;
     else if (r < .8) I[away] = 1; else if (r < .86) I.u = 1; else if (r < .92) I.d = 1;
   }
-  if (f.m >= 100 && Math.random() < .5) I.b[4] = 1;
+  if (f.m >= 100 && _mr() < .5) I.b[4] = 1;
   f.aiI = Object.assign({}, I, { b: [0, 0, 0, 0, 0, 0] });
   return I;
 }
 
 function step(f, o, dt) {
-  if (f.ko) { f.dz += dt; f.mx = Math.min(1, Math.max(0, (f.dz - .5) / 1.1)); }
+  if (f.ko) { f.dz += dt; f.mx = _mn(1, _mx(0, (f.dz - .5) / 1.1)); }
   for (const k of ['hs', 'stun', 'inv', 'sil', 'slow', 'sh', 'buff', 'ctr', 'fl', 'cast', 'cbt', 'iv']) if (f[k] > 0) f[k] -= dt;
   f.cd[0] -= dt; f.cd[1] -= dt;
   f.anim += dt;
@@ -302,7 +304,7 @@ function step(f, o, dt) {
             f.lh = f.at; f.hd = 1;
             const before = o.hp;
             hurt(o, a.d, f, {});
-            if (a.heal) f.hp = Math.min(100, f.hp + (before - o.hp) * .7);
+            if (a.heal) f.hp = _mn(100, f.hp + (before - o.hp) * .7);
           }
         }
       } else if (a.dash && f.gr) f.vx = 0;
@@ -340,7 +342,7 @@ function hurt(o, d, f, fx) {
   if (o.ko || S.ph !== 'fight' || o.iv > 0) return;
   if (o.ctr > 0) {
     o.ctr = 0; flt(o, '¡REGLA VIOLADA!', '#75aadb'); snd('ctr'); spark(o.x, o.y - 100, 0x75aadb, 14);
-    hurt(f, Math.max(20, d * 2), o, { stun: .6 });
+    hurt(f, _mx(20, d * 2), o, { stun: .6 });
     return;
   }
   if (fx.bonus) d += (100 - o.hp) * .25;
@@ -349,13 +351,16 @@ function hurt(o, d, f, fx) {
   const dir = o.x >= f.x ? 1 : -1;
   if (o.blk && !fx.ub) {
     d *= .15; o.kx = dir * 140; spark(o.x - dir * 20, o.y - 100, 0xffffff, 5); snd('blk');
+    if (_mr() < .3) chat('b');
   } else {
     if (o.sh > 0) d *= .5;
     o.hs = .22; o.kx = dir * 240; o.fl = .12; o.atk = null;
     f.cb = f.cbt > 0 ? f.cb + 1 : 1; f.cbt = .9;
-    if (f.cb > 2 && f.cb & 1) flt(f, ['¡BIEN!', '¡GENIAL!', '¡BRUTAL!', '¡ÉPICO!'][Math.min(3, f.cb - 3 >> 1)], '#ff6ec7');
+    if (f.cb > 2 && f.cb & 1) flt(f, ['¡BIEN!', '¡GENIAL!', '¡BRUTAL!', '¡ÉPICO!'][_mn(3, f.cb - 3 >> 1)], '#ff6ec7');
     if (!S.fh) { S.fh = 1; flt(f, '¡PRIMER COMMIT!', '#e1ff00'); if (S.np === 1 && !f.i) S.pts += 300; }
     if (f.cb >= 5 && !f.cpu) unlock(2);
+    hype(d * 6 | 0, f); if (f.cb === 3) chat('c');
+    if (d >= 8 && _mr() < .6) ono(o.x - dir * 30, o.y - 150);
     if (f.cb >= 4 && f.cb % 4 === 0) { o.kx = dir * 520; o.iv = .5; o.hs = .3; }
     if (S.np === 1 && f.i === 0 && f.cb >= 3) S.pts += f.cb * 50;
     if (fx.stun) o.stun = fx.stun;
@@ -363,19 +368,48 @@ function hurt(o, d, f, fx) {
     if (fx.sil) { o.sil = fx.sil; flt(o, '[REDACTADO]', '#aaaaaa'); }
     if (fx.slow) o.slow = fx.slow;
     if (fx.slip) flt(o, '¡SE RESBALÓ!', '#ffe135');
-    if (fx.drain) o.m = Math.max(0, o.m - fx.drain);
-    if (fx.time) { S.time = Math.max(1, S.time - fx.time); flt(o, '-3 SEG', '#e1ff00'); }
+    if (fx.drain) o.m = _mx(0, o.m - fx.drain);
+    if (fx.time) { S.time = _mx(1, S.time - fx.time); flt(o, '-3 SEG', '#e1ff00'); }
     spark(o.x, o.y - 95, 0xffe066); snd('hit'); S.hst = d >= 12 ? .12 : .06; S.imp.push({ x: o.x - dir * 18, y: o.y - 100, l: .12, s: d >= 12 ? 1.6 : 1 });
     if (d >= 12) S.sc.cameras.main.shake(120, .006);
   }
-  o.hp = Math.max(0, o.hp - d); o.tk += d;
-  if (S.np === 1 && f.i === 0) S.pts += Math.round(d * 10);
-  f.m = Math.min(100, f.m + d * .9); o.m = Math.min(100, o.m + d * .5);
+  o.hp = _mx(0, o.hp - d); o.tk += d;
+  if (S.np === 1 && f.i === 0) S.pts += _mR(d * 10);
+  f.m = _mn(100, f.m + d * .9); o.m = _mn(100, o.m + d * .5);
   if (o.hp <= 0) {
     o.ko = 1; o.gr = 0; o.vy = -420; o.kx = dir * 260;
-    ann('¡DEPLOYADO!', '#ff6ec7', 1400); snd('ko'); S.sc.cameras.main.shake(300, .012).zoomTo(1.3, 250).pan(o.x, o.y - 100, 250); S.slo = 1.2;
+    ann('¡DEPLOYADO!', '#ff6ec7', 1400); snd('ko'); chat('k'); hype(600, f); S.sc.cameras.main.shake(300, .012).zoomTo(1.3, 250).pan(o.x, o.y - 100, 250); S.slo = 1.2;
     endRound(f);
   }
+}
+
+// ---------- La final se transmite EN VIVO: espectadores y un chat que reacciona a la pelea ----------
+// Ningún juego de peleas usa al público como sistema: aquí el chat comenta lo que haces
+// y cada 1,500 espectadores nuevos alguien "dona un café" que llena tu súper.
+const CU = [['NACHO_CAM', '#ff6ec7'], ['RAFA_OFICIAL', '#e1ff00'], ['DEV_CDMX', '#39ff88'], ['JUEZ_3', '#29e6ff'], ['ANON42', '#ff9b3d'], ['TEAM_WOKI', '#ffffff']];
+const CM = {
+  i: ['¿QUIÉN GANA?', 'EL DEADLINE VIENE...', '¿ALGUIEN TIENE CAFÉ?', 'SALUDOS DESDE BOGOTÁ', 'ESTE ESCENARIO ESTÁ BRUTAL', 'YA SE ME CAYÓ EL WIFI'],
+  c: ['ESE COMBO', 'NO MANCHES', 'CLIP IT', '+1 AL PITCH', 'ESO NO PASA EL CODE REVIEW'],
+  k: ['GG', 'DEPLOYADO JAJA', 'F EN EL CHAT', 'GG WP'],
+  b: ['QUÉ DEFENSA', 'BLOQUEÓ TODO'],
+  s: ['¡¡SÚPER!!', '¿ESO ES LEGAL?', 'RAFA REVISA ESO'],
+};
+function chat(k, m) {
+  const u = CU[_mr() * CU.length | 0], a = CM[k];
+  S.cq.push([u[0] + ': ' + (m || a[_mr() * a.length | 0]), u[1]]);
+  if (S.cq.length > 4) S.cq.shift();
+  S.cl.forEach((t, i) => { const q = S.cq[i]; t.setText(q ? q[0] : '').setColor(q ? q[1] : '#fff'); });
+}
+function hype(n, f) {
+  const a = S.vw; S.vw += n;
+  if (f && (S.vw / 1500 | 0) > (a / 1500 | 0)) { f.m = _mn(100, f.m + 30); chat(0, 'DONÓ UN CAFÉ A ' + f.name + ': +SÚPER'); }
+  S.vT.setText('● EN VIVO · ' + S.vw.toLocaleString('es-MX') + ' VIENDO');
+}
+// Onomatopeyas de cómic en los golpes fuertes
+function ono(x, y) {
+  const t = S.sc.add.text(x + rnd(-30, 30), y + rnd(-20, 10), ['¡PAF!', '¡ZAS!', '¡PUM!', '¡CRAC!', '¡TOING!'][_mr() * 5 | 0], { fontFamily: 'Impact, monospace', fontSize: '34px', color: '#ffe135', stroke: '#1d1430', strokeThickness: 7 }).setOrigin(.5).setDepth(16).setAngle(rnd(-18, 18)).setScale(.4);
+  S.sc.tweens.add({ targets: t, scale: 1, duration: 90 });
+  S.sc.tweens.add({ targets: t, alpha: 0, delay: 380, duration: 250, onComplete: () => t.destroy() });
 }
 
 // ---------- Dibujo de luchadores (pixel art procedural) ----------
@@ -388,7 +422,7 @@ function pose(f) {
   if (!f.gr) return 'jump';
   if (f.cr) return 'crouch';
   if (f.blk) return 'block';
-  if (Math.abs(f.vx) > 1) return 'walk';
+  if (_ma(f.vx) > 1) return 'walk';
   return 'idle';
 }
 
@@ -399,17 +433,17 @@ function lit(c) { return lerpC(c, 0xfff2c4, .3); }
 function drawF(g, f, X, Y, sc = 1) {
   if (f.t === 8) return drawClock(g, f, X, Y, sc);
   const U = 5 * sc, fc = f.face, T = TEAMS[f.t], L = f.look, t = f.t;
-  X = Math.round(X / U) * U; Y = Math.round(Y / U) * U;
+  X = _mR(X / U) * U; Y = _mR(Y / U) * U;
   const ps = pose(f), W8 = 0xffffff, sk = f.fl > 0 ? W8 : SK[L[0]], hc = HC[L[1]], hs = L[2];
   const sh = f.fl > 0 ? W8 : T.col, sh2 = shd(sh), dk = 0x15151f;
   const pa = f.fl > 0 ? W8 : t === 9 ? 0xe6c200 : lerpC(T.col, 0x1d1430, .72);
   // complexion: 0 slim, 1 medium, 2 broad
   const bd = L[4] === undefined ? 1 : L[4], tw = [9, 10, 12][bd], tl = -(tw >> 1), lw = bd === 2 ? 4 : 3;
   const gl = L[3] || t === 2 || t === 6;
-  if (!f.ko) { const k = Math.max(.3, 1 - (GR - f.y) / 300); g.fillStyle(0x000000, .28 * k); g.fillEllipse(X, Y + (GR - f.y) + 2, 70 * sc * k, 12 * sc * k); }
+  if (!f.ko) { const k = _mx(.3, 1 - (GR - f.y) / 300); g.fillStyle(0x000000, .28 * k); g.fillEllipse(X, Y + (GR - f.y) + 2, 70 * sc * k, 12 * sc * k); }
   if (f.sh > 0) { g.lineStyle(3, 0x2ecc71, .7); g.strokeCircle(X, Y - 75 * sc, 85 * sc); }
-  if (f.ctr > 0) { g.lineStyle(4, 0x75aadb, .5 + Math.sin(S.T * 20) * .3); g.strokeRect(X - 40 * sc, Y - 155 * sc, 80 * sc, 155 * sc); }
-  if (f.buff > 0) { g.fillStyle(0xff7b29, .18 + Math.sin(S.T * 15) * .08); g.fillCircle(X, Y - 75 * sc, 80 * sc); }
+  if (f.ctr > 0) { g.lineStyle(4, 0x75aadb, .5 + _ms(S.T * 20) * .3); g.strokeRect(X - 40 * sc, Y - 155 * sc, 80 * sc, 155 * sc); }
+  if (f.buff > 0) { g.fillStyle(0xff7b29, .18 + _ms(S.T * 15) * .08); g.fillCircle(X, Y - 75 * sc, 80 * sc); }
   const dsd = fc > 0 ? 1 : -1;
   const body = (R, ol) => {
     // B = part with volume: base + hue-shifted shadow strip + light strip
@@ -426,92 +460,92 @@ function drawF(g, f, X, Y, sc = 1) {
       return;
     }
     const cr = ps === 'crouch' ? 5 : 0, ln = ps === 'hurt' || ps === 'wind' ? -1 : 0;
-    const bob = ps === 'idle' ? Math.round(Math.sin(f.anim * 4) * .6) : 0;
+    const bob = ps === 'idle' ? _mR(_ms(f.anim * 4) * .6) : 0;
     // legs: stance with legs apart
     if (ps === 'jump') { B(-4, -14, lw, 5, pa); B(1, -15, lw, 5, pa); shoe(-4, -10, lw + 1); shoe(1, -11, lw + 1); }
     else if (ps === 'kick') { B(-4, -10, lw, 8, pa); shoe(-5, -2, lw + 1); B(1, -14, 10, 3, pa); R(11, -15, 2, 4, sh); R(13, -15, 1, 4, W8); }
     else if (cr) { B(-6, -5, lw + 1, 3, pa); B(2, -5, lw + 1, 3, pa); shoe(-7, -2, lw + 2); shoe(2, -2, lw + 2); }
     else {
-      const s = ps === 'walk' ? Math.round(Math.sin(f.anim * 12) * 2) : 0;
+      const s = ps === 'walk' ? _mR(_ms(f.anim * 12) * 2) : 0;
       B(-5 + s, -10, lw, 8, pa); B(2 - s, -10, lw, 8, pa); shoe(-6 + s, -2, lw + 1); shoe(2 - s, -2, lw + 1);
     }
-    const b = cr + bob + (ps === 'jump' ? -4 : 0), y = d => d + b, x = d => d + ln;
+    const b = cr + bob + (ps === 'jump' ? -4 : 0), y = d => d + b, x = d => d + ln, Q = (a, c, w, h, k) => R(x(a), y(c), w, h, k);
     // behind the body: cape (Dominikito), tail (Little Dragons), antenna (WOKI), hood (Rafa)
-    if (t === 4) R(x(tl - 2), y(-19), 3, 15, lerpC(sh, 0x2e168f, .5));
-    if (t === 0) { R(x(tl - 3), y(-13), 3, 2, sh); R(x(tl - 5), y(-15), 2, 2, sh); if (!ol) R(x(tl - 6), y(-16), 1, 1, 0xffe066); }
-    if (t === 5) { R(x(tl), y(-28), 1, 8, dk); if (!ol) R(x(tl), y(-29), 1, 1, S.T % 1 < .5 ? 0xff3b3b : 0x661111); }
-    if (t === 7) R(x(-6), y(-22), 3, 3, sh2);
+    if (t === 4) Q(tl - 2, -19, 3, 15, lerpC(sh, 0x2e168f, .5));
+    if (t === 0) { Q(tl - 3, -13, 3, 2, sh); Q(tl - 5, -15, 2, 2, sh); if (!ol) Q(tl - 6, -16, 1, 1, 0xffe066); }
+    if (t === 5) { Q(tl, -28, 1, 8, dk); if (!ol) Q(tl, -29, 1, 1, S.T % 1 < .5 ? 0xff3b3b : 0x661111); }
+    if (t === 7) Q(-6, -22, 3, 3, sh2);
     // torso: open jacket in team color with inner shirt
     B(x(tl), y(-20), tw, 9, sh);
     if (!ol) {
-      if (t === 9) { R(x(tl + 2), y(-17), 1, 1, 0x8a6a1f); R(x(tl + tw - 3), y(-14), 1, 1, 0x8a6a1f); R(x(-1), y(-19), 1, 1, 0x8a6a1f); }
-      else R(x(-1), y(-20), 3, 8, t === 1 ? W8 : lerpC(T.ac, W8, .25));
-      if (t === 1) R(x(0), y(-19), 1, 6, 0xc0392b);
-      if (t === 3) { R(x(tl + 1), y(-20), 1, 9, T.ac); R(x(tl + tw - 2), y(-20), 1, 9, T.ac); }
-      if (t === 0) { R(x(tl + 1), y(-17), 1, 1, lit(sh)); R(x(tl + 2), y(-14), 1, 1, lit(sh)); }
-      if (t === 5) { R(x(tl), y(-16), tw, 1, 0x111111); R(x(tl), y(-13), tw, 1, 0x111111); }
-      if (t === 7) { R(x(-2), y(-16), 1, 1, dk); R(x(-1), y(-15), 3, 1, dk); R(x(2), y(-16), 1, 1, dk); }
-      for (let k = 0; k < tw; k++) R(x(tl + k), y(-11), 1, 1, t === 3 ? (k & 1 ? T.ac : dk) : dk);
+      if (t === 9) { Q(tl + 2, -17, 1, 1, 0x8a6a1f); Q(tl + tw - 3, -14, 1, 1, 0x8a6a1f); Q(-1, -19, 1, 1, 0x8a6a1f); }
+      else Q(-1, -20, 3, 8, t === 1 ? W8 : lerpC(T.ac, W8, .25));
+      if (t === 1) Q(0, -19, 1, 6, 0xc0392b);
+      if (t === 3) { Q(tl + 1, -20, 1, 9, T.ac); Q(tl + tw - 2, -20, 1, 9, T.ac); }
+      if (t === 0) { Q(tl + 1, -17, 1, 1, lit(sh)); Q(tl + 2, -14, 1, 1, lit(sh)); }
+      if (t === 5) { Q(tl, -16, tw, 1, 0x111111); Q(tl, -13, tw, 1, 0x111111); }
+      if (t === 7) { Q(-2, -16, 1, 1, dk); Q(-1, -15, 3, 1, dk); Q(2, -16, 1, 1, dk); }
+      for (let k = 0; k < tw; k++) Q(tl + k, -11, 1, 1, t === 3 ? (k & 1 ? T.ac : dk) : dk);
     }
     // head with ear
     B(x(-4), y(-29), 9, 9, sk);
     if (!ol) {
-      R(x(-2), y(-25), 1, 2, shd(sk));
+      Q(-2, -25, 1, 2, shd(sk));
       const hurt = ps === 'hurt', mad = ps === 'punch' || ps === 'kick' || ps === 'cast' || ps === 'wind';
-      if (hurt) { R(x(0), y(-24), 2, 1, dk); R(x(3), y(-24), 2, 1, dk); R(x(3), y(-22), 2, 2, 0x5a1f1f); }
+      if (hurt) { Q(0, -24, 2, 1, dk); Q(3, -24, 2, 1, dk); Q(3, -22, 2, 2, 0x5a1f1f); }
       else {
-        R(x(0), y(-25), 2, 2, W8); R(x(3), y(-25), 2, 2, W8); R(x(1), y(-25), 1, 2, dk); R(x(4), y(-25), 1, 2, dk);
-        if (mad) { R(x(0), y(-27), 1, 1, hc); R(x(1), y(-26), 1, 1, hc); R(x(3), y(-26), 1, 1, hc); R(x(4), y(-27), 1, 1, hc); }
-        else { R(x(0), y(-27), 2, 1, hc); R(x(3), y(-27), 2, 1, hc); }
-        R(x(ps === 'win' ? 2 : 3), y(-22), ps === 'win' ? 3 : 2, 1, 0x7a3b2e);
+        Q(0, -25, 2, 2, W8); Q(3, -25, 2, 2, W8); Q(1, -25, 1, 2, dk); Q(4, -25, 1, 2, dk);
+        if (mad) { Q(0, -27, 1, 1, hc); Q(1, -26, 1, 1, hc); Q(3, -26, 1, 1, hc); Q(4, -27, 1, 1, hc); }
+        else { Q(0, -27, 2, 1, hc); Q(3, -27, 2, 1, hc); }
+        Q(ps === 'win' ? 2 : 3, -22, ps === 'win' ? 3 : 2, 1, 0x7a3b2e);
       }
-      R(x(-1), y(-23), 1, 1, lerpC(sk, 0xff6b6b, .4));
+      Q(-1, -23, 1, 1, lerpC(sk, 0xff6b6b, .4));
       if (gl && !hurt) {
-        R(x(-1), y(-26), 7, 1, dk);
+        Q(-1, -26, 7, 1, dk);
         const l1 = t === 6 ? 0xff3355 : t === 2 ? 0xffffff : 0x9fb4c8, l2 = t === 6 ? 0x33e0ff : l1;
-        R(x(0), y(-25), 2, 1, l1); R(x(3), y(-25), 2, 1, l2);
+        Q(0, -25, 2, 1, l1); Q(3, -25, 2, 1, l2);
       }
-      if (t === 2) { R(x(-2), y(-24), 1, 2, 0xe8e8e8); if ((S.T * 3 | 0) % 4 === 0) R(x(-4), y(-29 + ((S.T * 30) | 0) % 9), 9, 1, 0xffffff); }
-      if (f.sil > 0) R(x(2), y(-23), 4, 2, 0x000000);
+      if (t === 2) { Q(-2, -24, 1, 2, 0xe8e8e8); if ((S.T * 3 | 0) % 4 === 0) R(x(-4), y(-29 + ((S.T * 30) | 0) % 9), 9, 1, 0xffffff); }
+      if (f.sil > 0) Q(2, -23, 4, 2, 0x000000);
     }
     // hair
-    const H2 = (dx, dy, w, h) => R(x(dx), y(dy), w, h, hc);
+    const H2 = (dx, dy, w, h) => Q(dx, dy, w, h, hc);
     if (t === 9) {
-      R(x(-5), y(-32), 11, 3, sh); R(x(-5), y(-29), 2, 10, sh); R(x(-3), y(-33), 6, 1, sh);
-      R(x(0), y(-36), 2, 3, 0x6d4c2f); R(x(1), y(-37), 2, 1, 0x6d4c2f);
-      R(x(tl - 1), y(-22), 2, 4, sh); R(x(tl + tw - 1), y(-22), 2, 4, sh);
+      Q(-5, -32, 11, 3, sh); Q(-5, -29, 2, 10, sh); Q(-3, -33, 6, 1, sh);
+      Q(0, -36, 2, 3, 0x6d4c2f); Q(1, -37, 2, 1, 0x6d4c2f);
+      Q(tl - 1, -22, 2, 4, sh); Q(tl + tw - 1, -22, 2, 4, sh);
     }
     else if (hs === 0) { H2(-4, -30, 9, 2); H2(-4, -28, 2, 3); }
     else if (hs === 1) { H2(-5, -30, 10, 2); H2(-5, -28, 3, 10); }
     else if (hs === 2) { H2(-6, -33, 12, 5); H2(-6, -28, 3, 4); }
     else if (hs === 3) { H2(-4, -30, 9, 2); H2(-4, -28, 2, 2); H2(-7, -29, 3, 2); H2(-8, -28, 2, 6); }
-    else { R(x(-4), y(-31), 9, 2, sh2); R(x(3), y(-30), 4, 1, sh2); H2(-4, -29, 2, 2); }
-    if (!ol && hs !== 4 && t !== 9) R(x(-1), y(hs === 2 ? -33 : -30), 3, 1, lit(hc));
+    else { Q(-4, -31, 9, 2, sh2); Q(3, -30, 4, 1, sh2); H2(-4, -29, 2, 2); }
+    if (!ol && hs !== 4 && t !== 9) Q(-1, hs === 2 ? -33 : -30, 3, 1, lit(hc));
     // team signature accessory
     if (t === 0) { R(x(-2), y(-32 - (hs === 2 ? 2 : 0)), 2, 2, 0xfff1c1); R(x(2), y(-32 - (hs === 2 ? 2 : 0)), 2, 2, 0xfff1c1); }
     if (t === 1) { H2(-7, -30, 3, 2); H2(-8, -28, 3, 2); H2(-7, -26, 2, 2); }
-    if (t === 5) { R(x(-5), y(-32), 11, 3, 0xf5f5f5); R(x(-4), y(-33), 9, 1, 0xf5f5f5); R(x(4), y(-30), 3, 1, 0x111111); }
-    if (t === 6) { R(x(-5), y(-32), 10, 2, 0xd9a441); R(x(-1), y(-33), 2, 1, 0xd9a441); }
-    if (t === 7 && !ol) { R(x(-5), y(-27), 1, 4, dk); R(x(-5), y(-23), 6, 1, dk); R(x(1), y(-23), 1, 1, 0xff3b3b); }
+    if (t === 5) { Q(-5, -32, 11, 3, 0xf5f5f5); Q(-4, -33, 9, 1, 0xf5f5f5); Q(4, -30, 3, 1, 0x111111); }
+    if (t === 6) { Q(-5, -32, 10, 2, 0xd9a441); Q(-1, -33, 2, 1, 0xd9a441); }
+    if (t === 7 && !ol) { Q(-5, -27, 1, 4, dk); Q(-5, -23, 6, 1, dk); Q(1, -23, 1, 1, 0xff3b3b); }
     // arms: always on guard, fists up
-    const guard = () => { R(x(1), y(-16), 3, 2, sh2); R(x(4), y(-17), 2, 2, sk); R(x(3), y(-19), 3, 2, sh); R(x(5), y(-22), 2, 4, sh); R(x(5), y(-24), 2, 2, sk); };
-    if (ps === 'punch') { R(x(1), y(-16), 3, 2, sh2); R(x(4), y(-17), 2, 2, sk); R(1, y(-20), 9, 2, sh); R(10, y(-21), 3, 3, sk); }
+    const guard = () => { Q(1, -16, 3, 2, sh2); Q(4, -17, 2, 2, sk); Q(3, -19, 3, 2, sh); Q(5, -22, 2, 4, sh); Q(5, -24, 2, 2, sk); };
+    if (ps === 'punch') { Q(1, -16, 3, 2, sh2); Q(4, -17, 2, 2, sk); R(1, y(-20), 9, 2, sh); R(10, y(-21), 3, 3, sk); }
     else if (ps === 'cast') { R(1, y(-20), 8, 2, sh); R(9, y(-21), 2, 3, sk); R(1, y(-17), 7, 2, sh2); R(8, y(-18), 2, 2, sk); }
-    else if (ps === 'win') { R(x(1), y(-16), 3, 2, sh2); R(x(4), y(-17), 2, 2, sk); R(3, y(-27), 2, 8, sh); R(3, y(-30), 2, 3, sk); }
+    else if (ps === 'win') { Q(1, -16, 3, 2, sh2); Q(4, -17, 2, 2, sk); R(3, y(-27), 2, 8, sh); R(3, y(-30), 2, 3, sk); }
     else if (ps === 'block') { R(4, y(-27), 2, 8, sh); R(4, y(-28), 2, 2, sk); R(6, y(-25), 2, 6, sh2); }
-    else if (ps === 'hurt') { R(x(-7), y(-21), 2, 5, sh); R(x(-8), y(-23), 2, 2, sk); }
-    else if (ps === 'wind') { R(x(1), y(-16), 3, 2, sh2); R(-7, y(-19), 5, 2, sh); R(-9, y(-20), 2, 3, sk); }
+    else if (ps === 'hurt') { Q(-7, -21, 2, 5, sh); Q(-8, -23, 2, 2, sk); }
+    else if (ps === 'wind') { Q(1, -16, 3, 2, sh2); R(-7, y(-19), 5, 2, sh); R(-9, y(-20), 2, 3, sk); }
     else guard();
   };
   // pass 1: very dark purple outline (not pure black); pass 2: colors (green while turning into code)
   const OC = f.fl > 0 ? W8 : f.mx > 0 ? 0x003b1a : 0x1d1430;
   const gone = (dx, dy) => f.mx > .25 && ((dx * 7 + dy * 13 + ((S.T * 14) | 0)) & 7) / 8 < (f.mx - .25) * 1.4;
   body((dx, dy, w, h) => { if (w * h > 2 && !gone(dx, dy)) { g.fillStyle(OC); g.fillRect(X + (fc > 0 ? dx - 1 : -dx - w - 1) * U, Y + (dy - 1) * U, (w + 2) * U, (h + 2) * U); } }, 1);
-  body((dx, dy, w, h, c) => { if (gone(dx, dy)) return; g.fillStyle(f.mx > 0 ? lerpC(c, 0x00ff66, Math.min(1, f.mx * 1.6)) : c); g.fillRect(X + (fc > 0 ? dx : -dx - w) * U, Y + dy * U, w * U, h * U); }, 0);
+  body((dx, dy, w, h, c) => { if (gone(dx, dy)) return; g.fillStyle(f.mx > 0 ? lerpC(c, 0x00ff66, _mn(1, f.mx * 1.6)) : c); g.fillRect(X + (fc > 0 ? dx : -dx - w) * U, Y + dy * U, w * U, h * U); }, 0);
   if (ps === 'punch') { g.fillStyle(W8, .45); g.fillRect(X + (fc > 0 ? 2 : -11) * U, Y - 20 * U, 9 * U, 2 * U); }
   if (ps === 'cast') { g.fillStyle(T.col, .5); g.fillCircle(X + fc * 12 * U, Y - 19 * U, 4 * U); }
-  if (f.stun > 0) for (let k = 0; k < 3; k++) { g.fillStyle(0xffe066); g.fillRect(X + Math.cos(S.T * 6 + k * 2.1) * 22 * sc - 3, Y - 175 * sc + Math.sin(S.T * 6 + k * 2.1) * 6, 6, 6); }
-  if (f.inv > 0) { g.fillStyle(0xc39bd3); g.fillRect(X - 3, Y - 190 * sc + Math.sin(S.T * 8) * 4, 6, 10); }
+  if (f.stun > 0) for (let k = 0; k < 3; k++) { g.fillStyle(0xffe066); g.fillRect(X + _mc(S.T * 6 + k * 2.1) * 22 * sc - 3, Y - 175 * sc + _ms(S.T * 6 + k * 2.1) * 6, 6, 6); }
+  if (f.inv > 0) { g.fillStyle(0xc39bd3); g.fillRect(X - 3, Y - 190 * sc + _ms(S.T * 8) * 4, 6, 10); }
 }
 
 // ---------- Efecto "se vuelve código": el luchador vencido se deshace en una lluvia de 0 y 1 ----------
@@ -521,11 +555,11 @@ function glyph(g, x, y, one) {
 }
 function codeRain(g, f) {
   if (!(f.mx > 0)) return;
-  const fade = f.dz < 2.4 ? 1 : Math.max(0, 1 - (f.dz - 2.4) * 1.5);
+  const fade = f.dz < 2.4 ? 1 : _mx(0, 1 - (f.dz - 2.4) * 1.5);
   if (fade <= 0) return;
   const cx = f.x - f.face * 40;
   for (let k = 0; k < 16; k++) {
-    const x = Math.round(cx - 80 + k * 10), sp = 140 + (k * 53) % 90;
+    const x = _mR(cx - 80 + k * 10), sp = 140 + (k * 53) % 90;
     const hy = GR - 175 + ((S.T * sp + k * 41) % 200);
     for (let j = 0; j < 7; j++) {
       const y = hy - j * 11;
@@ -545,13 +579,13 @@ function drawClock(g, f, X, Y, sc) {
   g.fillStyle(f.fl > 0 ? 0xffffff : 0xff3b3b); g.fillCircle(X, cy, r);
   g.fillStyle(0xfff4e0); g.fillCircle(X, cy, r * .8);
   g.fillStyle(0x111111);
-  for (let k = 0; k < 12; k++) g.fillRect(X + Math.cos(k * .5236) * r * .68 - 2, cy + Math.sin(k * .5236) * r * .68 - 2, 4, 4);
+  for (let k = 0; k < 12; k++) g.fillRect(X + _mc(k * .5236) * r * .68 - 2, cy + _ms(k * .5236) * r * .68 - 2, 4, 4);
   g.lineStyle(5 * sc, 0x111111);
-  g.lineBetween(X, cy, X + Math.cos(f.anim * 6) * r * .65, cy + Math.sin(f.anim * 6) * r * .65);
-  g.lineBetween(X, cy, X + Math.cos(f.anim * .6) * r * .42, cy + Math.sin(f.anim * .6) * r * .42);
+  g.lineBetween(X, cy, X + _mc(f.anim * 6) * r * .65, cy + _ms(f.anim * 6) * r * .65);
+  g.lineBetween(X, cy, X + _mc(f.anim * .6) * r * .42, cy + _ms(f.anim * .6) * r * .42);
   g.fillStyle(0x111111); g.fillRect(X - 22 * sc, cy - 22 * sc, 14 * sc, 6 * sc); g.fillRect(X + 8 * sc, cy - 22 * sc, 14 * sc, 6 * sc);
   if (ps === 'punch' || ps === 'cast') { g.fillStyle(0xff3b3b); g.fillRect(X + (f.face > 0 ? r - 6 : -r - 44) * 1, cy, 50 * sc, 12 * sc); }
-  if (f.stun > 0) { g.fillStyle(0xffe066); g.fillRect(X + Math.cos(S.T * 6) * 30 - 3, cy - r - 14, 6, 6); }
+  if (f.stun > 0) { g.fillStyle(0xffe066); g.fillRect(X + _mc(S.T * 6) * 30 - 3, cy - r - 14, 6, 6); }
 }
 
 
@@ -573,11 +607,11 @@ function prop(g, id) {
 function boost(f, id) {
   S.fl = .3; snd('heal'); spark(640, GR - 40, 0xf2ff00, 16);
   if (id < 2) { f.sh = 5; flt(f, '¡BOOST OBSERVATORIO: ESCUDO!', '#f2ff00'); }
-  else if (id === 2) { f.hp = Math.min(100, f.hp + 20); flt(f, '¡BOOST MATE: +20 VIDA!', '#f2ff00'); }
+  else if (id === 2) { f.hp = _mn(100, f.hp + 20); flt(f, '¡BOOST MATE: +20 VIDA!', '#f2ff00'); }
   else if (id === 3) { f.buff = 6; flt(f, '¡BOOST CALAVERA: MÁS DAÑO!', '#f2ff00'); }
   else if (id === 4) { f.m = 100; flt(f, '¡BOOST CHIVA: SÚPER LISTO!', '#f2ff00'); }
   else if (id > 7) { f.cd = [0, 0]; f.m = 100; flt(f, '¡BOOST AVIÓN: TODOS LOS PODERES!', '#f2ff00'); }
-  else { f.cd = [0, 0]; f.m = Math.min(100, f.m + 40); flt(f, '¡BOOST GUACAMAYA: PODERES LISTOS!', '#f2ff00'); }
+  else { f.cd = [0, 0]; f.m = _mn(100, f.m + 40); flt(f, '¡BOOST GUACAMAYA: PODERES LISTOS!', '#f2ff00'); }
 }
 
 function nacho(g, x, y, s, flash, d = 1) {
@@ -589,16 +623,16 @@ function nacho(g, x, y, s, flash, d = 1) {
 }
 
 function banana(g, x, y, r, w) {
-  g.lineStyle(w, 0xffe135); g.beginPath(); g.arc(x, y, r, Math.PI * .12, Math.PI * .88, false); g.strokePath();
+  g.lineStyle(w, 0xffe135); g.beginPath(); g.arc(x, y, r, _mP * .12, _mP * .88, false); g.strokePath();
   g.fillStyle(0x6d4c2f);
-  g.fillCircle(x + Math.cos(Math.PI * .12) * r, y + Math.sin(Math.PI * .12) * r, w * .3);
-  g.fillCircle(x + Math.cos(Math.PI * .88) * r, y + Math.sin(Math.PI * .88) * r, w * .3);
+  g.fillCircle(x + _mc(_mP * .12) * r, y + _ms(_mP * .12) * r, w * .3);
+  g.fillCircle(x + _mc(_mP * .88) * r, y + _ms(_mP * .88) * r, w * .3);
 }
 
 function drawP(g, p) {
   const x = p.x, y = p.y, d = p.vx >= 0 ? 1 : -1;
   switch (p.k) {
-    case 'fire': g.fillStyle(0xff5b1a); g.fillRect(x - 10, y - 10, 20, 20); g.fillStyle(0xffe066); g.fillRect(x - 5, y - 5, 10, 10); if (Math.random() < .5) spark(x - d * 10, y, 0xff9b3d, 1); break;
+    case 'fire': g.fillStyle(0xff5b1a); g.fillRect(x - 10, y - 10, 20, 20); g.fillStyle(0xffe066); g.fillRect(x - 5, y - 5, 10, 10); if (_mr() < .5) spark(x - d * 10, y, 0xff9b3d, 1); break;
     case 'arrow': g.fillStyle(0x2ecc71); g.fillRect(x - 14, y - 3, 22, 6); g.fillTriangle(x + d * 16, y, x + d * 4, y - 10, x + d * 4, y + 10); break;
     case 'scan': g.fillStyle(0x66ddff, .8); g.fillRect(x - 30, y - 4, 60, 8); g.fillStyle(0xffffff); g.fillRect(x - 30, y - 1, 60, 2); break;
     case 'q': case 'quiz':
@@ -606,13 +640,13 @@ function drawP(g, p) {
       g.fillStyle(p.k === 'q' ? 0xffffff : 0x8e44ad); g.fillRect(x - 5, y - 9, 10, 3); g.fillRect(x + 3, y - 9, 3, 8); g.fillRect(x - 2, y - 2, 5, 3); g.fillRect(x - 2, y + 5, 4, 4); break;
     case 'red': g.fillStyle(0x000000); g.fillRect(x - 20, y - 7, 40, 14); g.lineStyle(2, 0xffffff); g.strokeRect(x - 20, y - 7, 40, 14); break;
     case 'book': g.fillStyle(0x8e5a2f); g.fillRect(x - 11, y - 8, 22, 16); g.fillStyle(0xffffff); g.fillRect(x - 9, y - 6, 18, 2); g.fillStyle(0xe84393); g.fillRect(x - 1, y - 8, 2, 16); break;
-    case 'buddy': { const s = Math.round(Math.sin(S.T * 20) * 2); g.fillStyle(0x9c7cf6); g.fillRect(x - 10, y - 14, 20, 14); g.fillRect(x + d * 6 - 4, y - 22, 10, 10); g.fillStyle(0xffffff); g.fillRect(x + d * 8, y - 19, 3, 3); g.fillStyle(0x2d3047); g.fillRect(x - 8 + s, y, 5, 6); g.fillRect(x + 3 - s, y, 5, 6); break; }
+    case 'buddy': { const s = _mR(_ms(S.T * 20) * 2); g.fillStyle(0x9c7cf6); g.fillRect(x - 10, y - 14, 20, 14); g.fillRect(x + d * 6 - 4, y - 22, 10, 10); g.fillStyle(0xffffff); g.fillRect(x + d * 8, y - 19, 3, 3); g.fillStyle(0x2d3047); g.fillRect(x - 8 + s, y, 5, 6); g.fillRect(x + 3 - s, y, 5, 6); break; }
     case 'heart': g.fillStyle(0xff3b8d); g.fillCircle(x - 8, y - 6, 11); g.fillCircle(x + 8, y - 6, 11); g.fillTriangle(x - 18, y - 2, x + 18, y - 2, x, y + 18); break;
-    case 'wave': g.lineStyle(4, 0xf5c400); for (let k = 0; k < 3; k++) { g.beginPath(); g.arc(x - d * 20, y, 12 + k * 10, d > 0 ? -.8 : Math.PI - .8, d > 0 ? .8 : Math.PI + .8, false); g.strokePath(); } break;
+    case 'wave': g.lineStyle(4, 0xf5c400); for (let k = 0; k < 3; k++) { g.beginPath(); g.arc(x - d * 20, y, 12 + k * 10, d > 0 ? -.8 : _mP - .8, d > 0 ? .8 : _mP + .8, false); g.strokePath(); } break;
     case 'rock': g.fillStyle(0x7f8c8d); g.fillRect(x - 10, y - 10, 20, 20); g.fillStyle(0x4d5656); g.fillRect(x - 10, y + 4, 20, 6); break;
     case 'pillar': g.fillStyle(0xe8e0d0); g.fillRect(x - 18, y - 40, 36, 80); g.fillStyle(0xbdb5a3); g.fillRect(x - 10, y - 34, 4, 70); g.fillRect(x + 6, y - 34, 4, 70); g.fillRect(x - 22, y - 44, 44, 8); break;
     case 'clip': g.fillStyle(0x8d6e4f); g.fillRect(x - 10, y - 13, 20, 26); g.fillStyle(0xffffff); g.fillRect(x - 7, y - 8, 14, 18); g.fillStyle(0x888888); g.fillRect(x - 4, y - 15, 8, 4); break;
-    case 'clock': g.fillStyle(0xffffff); g.fillCircle(x, y, 13); g.lineStyle(3, 0x111111); g.strokeCircle(x, y, 13); g.lineBetween(x, y, x + Math.cos(S.T * 12) * 9, y + Math.sin(S.T * 12) * 9); break;
+    case 'clock': g.fillStyle(0xffffff); g.fillCircle(x, y, 13); g.lineStyle(3, 0x111111); g.strokeCircle(x, y, 13); g.lineBetween(x, y, x + _mc(S.T * 12) * 9, y + _ms(S.T * 12) * 9); break;
     case 'robot': g.fillStyle(0x95a5a6); g.fillRect(x - 30, y - 30, 60, 60); g.fillStyle(0xe1ff00); g.fillRect(x - 18, y - 16, 10, 8); g.fillRect(x + 8, y - 16, 10, 8); g.fillStyle(0x34495e); g.fillRect(x - 15, y + 8, 30, 6); g.fillRect(x - 3, y - 42, 6, 12); break;
     case 'peel': g.fillStyle(0xffe135); g.fillRect(x - 14, y - 2, 28, 6); g.fillRect(x - 14, y - 8, 6, 6); g.fillRect(x + 8, y - 8, 6, 6); g.fillRect(x - 3, y - 10, 6, 8); g.fillStyle(0x6d4c2f); g.fillRect(x - 2, y - 13, 4, 3); break;
     case 'ban': g.fillStyle(0xffe135); g.fillRect(x - 10, y - 2, 20, 6); g.fillRect(x - 14, y - 7, 5, 6); g.fillRect(x + 9, y - 7, 5, 6); g.fillStyle(0x6d4c2f); g.fillRect(x - 15, y - 9, 3, 3); g.fillRect(x + 12, y - 9, 3, 3); break;
@@ -710,7 +744,7 @@ function drawStage(g, id) {
     g.fillStyle(0x14040a); g.fillRect(0, 0, W, H); g.lineStyle(1, 0xff3b3b, .15);
     for (let x = 0; x < W; x += 40) g.lineBetween(x, 0, x, GR); for (let y = 0; y < GR; y += 40) g.lineBetween(0, y, W, y);
     g.lineStyle(6, 0x5a0f1a); g.strokeCircle(400, 230, 170);
-    g.fillStyle(0x5a0f1a); for (let k = 0; k < 12; k++) g.fillRect(400 + Math.cos(k * .5236) * 150 - 5, 230 + Math.sin(k * .5236) * 150 - 5, 10, 10);
+    g.fillStyle(0x5a0f1a); for (let k = 0; k < 12; k++) g.fillRect(400 + _mc(k * .5236) * 150 - 5, 230 + _ms(k * .5236) * 150 - 5, 10, 10);
     ground(g, 0x220810, 0xff3b3b);
   }
 }
@@ -721,16 +755,16 @@ function stageFx(g, id) {
     for (const y0 of [30, 75]) {
       g.lineStyle(2, 0x333333); g.lineBetween(0, y0, W, y0);
       for (let k = 0; k < 14; k++) {
-        const x = k * 58 + (y0 > 50 ? 25 : 0), dy = Math.sin(S.T * 2 + k + y0) * 3;
+        const x = k * 58 + (y0 > 50 ? 25 : 0), dy = _ms(S.T * 2 + k + y0) * 3;
         g.fillStyle(C[(k + (y0 > 50 ? 3 : 0)) % 6]); g.fillRect(x, y0 + dy, 42, 32);
         g.fillStyle(0xffb894); g.fillRect(x + 8, y0 + dy + 8, 6, 6); g.fillRect(x + 26, y0 + dy + 8, 6, 6); g.fillRect(x + 17, y0 + dy + 18, 6, 6);
       }
     }
   }
   if (id === 4) { g.lineStyle(1, 0xaabbcc, .6); for (let k = 0; k < 70; k++) { const x = (k * 137 + S.T * 90) % W, y = (k * 91 + S.T * 650) % H; g.lineBetween(x, y, x - 3, y + 12); } }
-  if (id === 7 && Math.random() < .08) { g.fillStyle(0xff3b3b, .3); g.fillRect(0, rnd(0, GR), W, rnd(3, 14)); }
+  if (id === 7 && _mr() < .08) { g.fillStyle(0xff3b3b, .3); g.fillRect(0, rnd(0, GR), W, rnd(3, 14)); }
   const fl = (S.T % 4) < .12;
-  if (id % 8 < 6) { if (!(S.pkt > 0)) { g.fillStyle(0xf2ff00, .18 + Math.sin(S.T * 6) * .1); g.fillCircle(640, GR - 30, 44); prop(g, id); } nacho(g, 745, GR - 4, 2.4, fl, -1); } else nacho(g, 750, GR - 4, 2.4, fl);
+  if (id % 8 < 6) { if (!(S.pkt > 0)) { g.fillStyle(0xf2ff00, .18 + _ms(S.T * 6) * .1); g.fillCircle(640, GR - 30, 44); prop(g, id); } nacho(g, 745, GR - 4, 2.4, fl, -1); } else nacho(g, 750, GR - 4, 2.4, fl);
 }
 
 
@@ -815,7 +849,7 @@ function updSel(dt) {
       if (pr(P + 'D')) { s.nm[s.cur] = CH[(ci - 1 + n) % n]; snd('sel'); }
       if (pr(P + 'R')) { if (s.cur < s.nm.length - 1) s.cur++; else if (s.nm.length < 8) { s.nm.push('A'); s.cur++; } }
       if (pr(P + 'L') && s.cur > 0) s.cur--;
-      if (pr(P + '2') && s.nm.length > 1) { s.nm.splice(s.cur, 1); s.cur = Math.min(s.cur, s.nm.length - 1); }
+      if (pr(P + '2') && s.nm.length > 1) { s.nm.splice(s.cur, 1); s.cur = _mn(s.cur, s.nm.length - 1); }
       if (pr(P + '1')) { s.name = s.nm.join('').trim() || 'P' + (i + 1); S.names[i] = s.name; save(); s.ph = 3; snd('ok'); }
       if (pr(P + '6')) s.ph = 1;
     } else if (pr(P + '6')) s.ph = 2;
@@ -840,10 +874,10 @@ function updSel(dt) {
       if (S.np === 2) {
         const b = S.sel[1];
         S.F = [mkF(0, a.t, a.lk, a.name, 0), mkF(1, b.t, b.lk, b.name, 0)];
-        S.stage = Math.random() < .5 ? TEAMS[Math.random() < .5 ? a.t : b.t].st : [0, 1, 2, 3, 4, 5, 6, 8][Math.random() * 8 | 0]; S.lv = 0;
+        S.stage = _mr() < .5 ? TEAMS[_mr() < .5 ? a.t : b.t].st : [0, 1, 2, 3, 4, 5, 6, 8][_mr() * 8 | 0]; S.lv = 0;
         go('vs');
       } else {
-        S.lad = SELT.filter(x => x !== a.t).sort(() => Math.random() - .5).slice(0, 3).concat([7, 8]);
+        S.lad = SELT.filter(x => x !== a.t).sort(() => _mr() - .5).slice(0, 3).concat([7, 8]);
         S.li = 0; S.ch = []; S.pts = 0; go('story');
       }
     }
@@ -851,7 +885,7 @@ function updSel(dt) {
 }
 function nextArcade() {
   const t = S.lad[S.li], h = S.hum, T = TEAMS[t];
-  S.F = [mkF(0, h.t, h.lk, h.name, 0), mkF(1, t, T.m[(Math.random() * T.m.length) | 0], T.n, 1)];
+  S.F = [mkF(0, h.t, h.lk, h.name, 0), mkF(1, t, T.m[(_mr() * T.m.length) | 0], T.n, 1)];
   S.stage = T.st; S.lv = S.li;
   go('vs');
 }
@@ -939,12 +973,17 @@ function initVs() {
   });
   if (S.np === 1) tx(W / 2, 30, HR[S.li] + (S.li === 3 ? ' (NACHO EN LA CÁMARA)' : ''), 16, '#ffffff');
   S.vsT = tx(W / 2, 290, 'VS', 64, '#ffffff');
-  tx(W / 2, 560, 'ESCENARIO: ' + SN[S.stage], 16, '#e1ff00');
+  // cartel de lucha libre: franjas rosa mexicano y naranja, y banda de función estelar
+  const g = S.bg;
+  for (let y = -40; y < H; y += 40) for (const x of [0, W - 26]) { g.fillStyle(0xe4007c); g.fillTriangle(x, y, x + 26, y + 20, x, y + 40); g.fillStyle(0xff7a00); g.fillTriangle(x + 26, y + 20, x + 26, y + 60, x, y + 40); }
+  g.fillStyle(0xe4007c); g.fillRect(26, 516, W - 52, 84);
+  tx(W / 2, 542, '¡FUNCIÓN ESTELAR! · A 2 DE 3 CAÍDAS', 24, '#ffe135');
+  tx(W / 2, 576, 'ESCENARIO: ' + SN[S.stage], 13, '#ffffff');
 }
 function updVs(dt) {
   S.g.clear();
   S.F.forEach((f, i) => { f.anim += dt; drawF(S.g, f, 200 + i * 400, 480, 1.9); });
-  S.vsT.setScale(1 + Math.sin(S.T * 8) * .08);
+  S.vsT.setScale(1 + _ms(S.T * 8) * .08);
   if (S.st > 2.8 || pr('START1') || pr('START2')) go('fight');
 }
 
@@ -963,6 +1002,8 @@ function initFight() {
   S.cT = [tx(130, 120, '', 24, '#ff6ec7'), tx(670, 120, '', 24, '#ff6ec7')];
   if (S.stage === 6) tx(675, 145, '36:00', 30, '#e1ff00');
   S.mt = 0; S.mi = 0; S.photo = 0; S.na = 6;
+  S.vw = 800 + (S.li || 0) * 700; S.cq = []; S.ct = 2;
+  S.cl = [0, 1, 2, 3].map(i => tx(770, 166 + i * 15, '', 11, '#fff', 1)); S.vT = tx(W / 2, 80, '', 10, '#ff5050'); hype(0);
   startRound();
 }
 function startRound() {
@@ -979,7 +1020,7 @@ function startRound() {
     o.dm = B ? 1 : .7 + S.li * .12; if (B) h.dm *= .85;
   }
   // 5: aviso de controles en el primer round de la primera pelea
-  if (!S.li && S.rd === 1) S.sc.tweens.add({ targets: tx(W / 2, 165, '1 GOLPE · 2 PATADA · 3 Y 4 PODERES · 5 SÚPER\nCAMINA HACIA ATRÁS PARA BLOQUEAR', 18), alpha: 0, delay: 4500, duration: 600 });
+  if (!S.li && S.rd === 1) S.sc.tweens.add({ targets: tx(W / 2, 262, '1 GOLPE · 2 PATADA · 3 Y 4 PODERES · 5 SÚPER\nCAMINA HACIA ATRÁS PARA BLOQUEAR', 18), alpha: 0, delay: 4500, duration: 600 });
   ann('ROUND ' + S.rd, '#ffffff', 700);
   later(1, () => { ann('¡A HACKEAR!', '#e1ff00', 500); snd('ok'); });
 }
@@ -993,13 +1034,14 @@ function endRound(w) {
 }
 function updFight(dt) {
   const [a, b] = S.F;
+  if ((S.ct -= dt) < 0) { S.ct = rnd(2.5, 5); chat('i', _mr() < .3 && 'VAMOS ' + (_mr() < .5 ? a : b).name); hype(rnd(10, 60) | 0); }
   if (S.hst > 0) { S.hst -= dt; drawFight(0); return; }
   if (S.slo > 0) { S.slo -= dt; dt *= .3; if (S.slo <= 0) S.sc.cameras.main.zoomTo(1, 200).pan(W / 2, H / 2, 200); }
   if (S.ph === 'intro') { S.pt -= dt; if (S.pt <= 0) S.ph = 'fight'; }
   for (let i = S.tm.length - 1; i >= 0; i--) { const t = S.tm[i]; t.t -= dt; if (t.t <= 0) { S.tm.splice(i, 1); t.fn(); } }
   step(a, b, dt); step(b, a, dt);
-  if (!a.ko && !b.ko && Math.abs(a.x - b.x) < 46 && Math.abs(a.y - b.y) < 120) {
-    const p = (46 - Math.abs(a.x - b.x)) / 2, s = a.x <= b.x ? -1 : 1;
+  if (!a.ko && !b.ko && _ma(a.x - b.x) < 46 && _ma(a.y - b.y) < 120) {
+    const p = (46 - _ma(a.x - b.x)) / 2, s = a.x <= b.x ? -1 : 1;
     a.x = clampX(a.x + s * p); b.x = clampX(b.x - s * p);
   }
   if (S.ph === 'fight') {
@@ -1013,17 +1055,17 @@ function updFight(dt) {
       p.vy += p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.l -= dt;
       let dead = p.l <= 0 || p.x < -60 || p.x > W + 60 || p.y > H + 60;
       const o = S.F[1 - p.ow];
-      if (!dead && !p.fx.ub) for (const w of S.walls) if (w.ow !== p.ow && Math.abs(p.x - w.x) < 16 && p.y > GR - 110) { dead = true; spark(p.x, p.y, 0x8d6e4f, 6); snd('blk'); }
+      if (!dead && !p.fx.ub) for (const w of S.walls) if (w.ow !== p.ow && _ma(p.x - w.x) < 16 && p.y > GR - 110) { dead = true; spark(p.x, p.y, 0x8d6e4f, 6); snd('blk'); }
       if (!dead) {
         const top = o.y - (o.cr ? 92 : 148);
-        if (Math.abs(p.x - o.x) < p.w / 2 + 20 && p.y + p.h / 2 > top && p.y - p.h / 2 < o.y) { hurt(o, p.d, S.F[p.ow], p.fx); dead = true; }
+        if (_ma(p.x - o.x) < p.w / 2 + 20 && p.y + p.h / 2 > top && p.y - p.h / 2 < o.y) { hurt(o, p.d, S.F[p.ow], p.fx); dead = true; }
       }
-      if (!dead && !p.nc && !p.fx.ub) for (const q of S.pr) if (q !== p && q.ow !== p.ow && !q.nc && !q.fx.ub && Math.abs(q.x - p.x) < 22 && Math.abs(q.y - p.y) < 22) { q.l = 0; dead = true; spark(p.x, p.y, 0xffffff, 10); snd('blk'); }
+      if (!dead && !p.nc && !p.fx.ub) for (const q of S.pr) if (q !== p && q.ow !== p.ow && !q.nc && !q.fx.ub && _ma(q.x - p.x) < 22 && _ma(q.y - p.y) < 22) { q.l = 0; dead = true; spark(p.x, p.y, 0xffffff, 10); snd('blk'); }
       if (dead) S.pr.splice(i, 1);
       if (S.ph !== 'fight') break;
     }
     for (let i = S.walls.length - 1; i >= 0; i--) if ((S.walls[i].l -= dt) <= 0) S.walls.splice(i, 1);
-    if (S.stage % 8 < 6 && (S.pkt -= dt) <= 0) for (const f of S.F) if (!f.ko && f.gr && Math.abs(f.x - 640) < 36) { boost(f, S.stage); S.pkt = 12; break; }
+    if (S.stage % 8 < 6 && (S.pkt -= dt) <= 0) for (const f of S.F) if (!f.ko && f.gr && _ma(f.x - 640) < 36) { boost(f, S.stage); S.pkt = 12; break; }
     // Nacho ayuda a Rafa
     if (b.t === 7) {
       S.na -= dt;
@@ -1032,7 +1074,7 @@ function updFight(dt) {
     }
     if (S.time <= 0 && S.ph === 'fight') {
       S.time = 0;
-      if (Math.abs(a.hp - b.hp) < .5) { ann('¡EMPATE!', '#ffffff', 1400); endRound(null); }
+      if (_ma(a.hp - b.hp) < .5) { ann('¡EMPATE!', '#ffffff', 1400); endRound(null); }
       else { ann('¡SE ACABÓ EL TIEMPO!', '#e1ff00', 1400); endRound(a.hp > b.hp ? a : b); }
     }
   } else if (S.ph === 'end') {
@@ -1058,9 +1100,9 @@ function drawFight(dt) {
 }
 function hud() {
   const h = S.h; h.clear();
-  h.fillStyle(0x000000, .5); h.fillRect(0, 0, W, 86); h.fillRect(0, 548, W, 52);
+  h.fillStyle(0x000000, .5); h.fillRect(0, 0, W, 86); h.fillRect(0, 548, W, 52); h.fillRect(W - 330, 156, 320, 66);
   S.F.forEach(f => {
-    if (f.ghp > f.hp) f.ghp = Math.max(f.hp, f.ghp - 35 * S.dt); else f.ghp = f.hp;
+    if (f.ghp > f.hp) f.ghp = _mx(f.hp, f.ghp - 35 * S.dt); else f.ghp = f.hp;
     const L = f.i === 0, x0 = L ? 30 : 450, w = 320, gw = w * f.ghp / 100, hw = w * f.hp / 100;
     h.fillStyle(0x000000); h.fillRect(x0 - 3, 15, w + 6, 24);
     h.fillStyle(0x5a0f0f); h.fillRect(x0, 18, w, 18);
@@ -1071,14 +1113,14 @@ function hud() {
     h.fillStyle(0x000000); h.fillRect(mx - 2, 556, 204, 14);
     h.fillStyle(f.m >= 100 ? (S.T * 8 % 2 < 1 ? 0xff6ec7 : 0xffffff) : 0x3498db); h.fillRect(mx, 558, 200 * f.m / 100, 10);
     for (let k = 0; k < 2; k++) {
-      const cx = L ? 250 + k * 22 : 530 - k * 22, r = Math.max(0, f.cd[k]) / (k ? 4.5 : 2.2);
+      const cx = L ? 250 + k * 22 : 530 - k * 22, r = _mx(0, f.cd[k]) / (k ? 4.5 : 2.2);
       h.fillStyle(0x000000); h.fillRect(cx - 9, 551, 18, 24);
       h.fillStyle(f.sil > 0 ? 0x555555 : r > 0 ? 0x34495e : 0x2ecc71); h.fillRect(cx - 7, 553 + 20 * r, 14, 20 * (1 - r));
     }
   });
-  S.tt.setText(String(Math.ceil(Math.max(0, S.time)))).setColor(S.time < 10 ? '#ff5050' : '#ffffff');
+  S.tt.setText(String(Math.ceil(_mx(0, S.time)))).setColor(S.time < 10 ? '#ff5050' : '#ffffff');
   S.ptT.setText(S.np === 1 ? 'PUNTOS ' + S.pts : '');
-  S.F.forEach((f, i) => S.cT[i].setText(f.cbt > 0 && f.cb >= 2 ? f.cb + ' GOLPES' : '').setScale(1 + Math.max(0, f.cbt - .7)));
+  S.F.forEach((f, i) => S.cT[i].setText(f.cbt > 0 && f.cb >= 2 ? f.cb + ' GOLPES' : '').setScale(1 + _mx(0, f.cbt - .7)));
 }
 function matchOver(w) {
   if (!w.cpu) {
@@ -1119,7 +1161,7 @@ function initOver() {
 }
 function updOver() {
   const n = 9 - Math.floor(S.st);
-  S.ct.setText(String(Math.max(0, n)));
+  S.ct.setText(String(_mx(0, n)));
   if (pr('START1')) { S.pts = 0; nextArcade(); }
   else if (pr('P1_6')) { S.np = 1; go('sel'); }
   else if (n < 0) go('title');
