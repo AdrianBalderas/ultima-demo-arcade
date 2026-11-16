@@ -351,6 +351,8 @@ function hurt(o, d, f, fx) {
     if (o.sh > 0) d *= .5;
     o.hs = .22; o.kx = dir * 240; o.fl = .12; o.atk = null;
     f.cb = f.cbt > 0 ? f.cb + 1 : 1; f.cbt = .9;
+    if (f.cb > 2 && f.cb & 1) flt(f, ['¡BIEN!', '¡GENIAL!', '¡BRUTAL!', '¡ÉPICO!'][Math.min(3, f.cb - 3 >> 1)], '#ff6ec7');
+    if (!S.fh) { S.fh = 1; flt(f, '¡PRIMER COMMIT!', '#e1ff00'); if (S.np === 1 && !f.i) S.pts += 300; }
     if (f.cb >= 5 && !f.cpu) unlock(2);
     if (f.cb >= 4 && f.cb % 4 === 0) { o.kx = dir * 520; o.iv = .5; o.hs = .3; }
     if (S.np === 1 && f.i === 0 && f.cb >= 3) S.pts += f.cb * 50;
@@ -369,7 +371,7 @@ function hurt(o, d, f, fx) {
   f.m = Math.min(100, f.m + d * .9); o.m = Math.min(100, o.m + d * .5);
   if (o.hp <= 0) {
     o.ko = 1; o.gr = 0; o.vy = -420; o.kx = dir * 260;
-    ann('¡DEPLOYADO!', '#ff6ec7', 1400); snd('ko'); S.sc.cameras.main.shake(300, .012);
+    ann('¡DEPLOYADO!', '#ff6ec7', 1400); snd('ko'); S.sc.cameras.main.shake(300, .012).zoomTo(1.3, 250).pan(o.x, o.y - 100, 250); S.slo = 1.2;
     endRound(f);
   }
 }
@@ -944,7 +946,7 @@ function initFight() {
 }
 function startRound() {
   S.F.forEach(reset);
-  S.pr = []; S.walls = []; S.tm = []; S.pa = []; S.imp = []; S.hst = 0; S.pkt = 4;
+  S.pr = []; S.walls = []; S.tm = []; S.pa = []; S.imp = []; S.hst = 0; S.pkt = 4; S.fh = 0;
   S.time = 36; S.ph = 'intro'; S.pt = 1.8;
   if (S.np === 1) {
     const h = S.F[0], c = S.ch;
@@ -966,6 +968,7 @@ function endRound(w) {
 function updFight(dt) {
   const [a, b] = S.F;
   if (S.hst > 0) { S.hst -= dt; drawFight(0); return; }
+  if (S.slo > 0) { S.slo -= dt; dt *= .3; if (S.slo <= 0) S.sc.cameras.main.zoomTo(1, 200).pan(W / 2, H / 2, 200); }
   if (S.ph === 'intro') { S.pt -= dt; if (S.pt <= 0) S.ph = 'fight'; }
   for (let i = S.tm.length - 1; i >= 0; i--) { const t = S.tm[i]; t.t -= dt; if (t.t <= 0) { S.tm.splice(i, 1); t.fn(); } }
   step(a, b, dt); step(b, a, dt);
