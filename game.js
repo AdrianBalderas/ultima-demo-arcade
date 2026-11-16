@@ -263,7 +263,7 @@ function incoming(f) {
 function ai(f, o, dt) {
   f.ait -= dt;
   if (f.ait > 0 && f.aiI) { const r = Object.assign({}, f.aiI); f.aiI.b = [0, 0, 0, 0, 0, 0]; return r; }
-  const lv = S.lv || 0;
+  const lv = (S.lv || 0) + (f.t === 7 || f.t === 8 ? 1 : 0); // los jefes pelean un nivel más arriba
   f.ait = Math.max(.05, rnd(.1, .24) - lv * .025);
   const I = { l: 0, r: 0, u: 0, d: 0, b: [0, 0, 0, 0, 0, 0] };
   const dx = o.x - f.x, dist = Math.abs(dx), tow = dx > 0 ? 'r' : 'l', away = dx > 0 ? 'l' : 'r';
@@ -922,7 +922,7 @@ function updCho() {
     g.lineStyle(2, Y, on ? 1 : .5); g.strokeRect(70 + j * 360, 250, 300, 150);
     S.co[j][0].setColor(on ? '#1a1a1a' : '#f2ff00'); S.co[j][1].setColor(on ? '#1a1a1a' : '#f2ff00').setAlpha(on ? 1 : .55);
   }
-  if (S.st > .4 && (pr('P1_1') || pr('START1'))) { S.ch[S.ck] = S.cs; snd('ok'); nextArcade(); }
+  if (S.st > 1.2 && (pr('P1_1') || pr('START1'))) { S.ch[S.ck] = S.cs; snd('ok'); nextArcade(); }
 }
 
 // ---------- Pantalla: VS ----------
@@ -974,7 +974,12 @@ function startRound() {
     if (c[0] === 1) { h.hp = h.ghp = 75; if (S.rd === 1) h.m = 100; }
     h.cdm = c[1] === 0 ? .7 : 1; h.dm = c[1] === 1 ? 1.2 : 1;
     if (c[2] === 1 && S.F[1].t === 7) S.F[1].hp = S.F[1].ghp = 80;
+    // curva: el CPU pega suave al inicio y fuerte en los jefes; a los jefes les cuesta más bajarles vida
+    const o = S.F[1], B = o.t === 7 || o.t === 8;
+    o.dm = B ? 1 : .7 + S.li * .12; if (B) h.dm *= .85;
   }
+  // 5: aviso de controles en el primer round de la primera pelea
+  if (!S.li && S.rd === 1) S.sc.tweens.add({ targets: tx(W / 2, 165, '1 GOLPE · 2 PATADA · 3 Y 4 PODERES · 5 SÚPER\nCAMINA HACIA ATRÁS PARA BLOQUEAR', 18), alpha: 0, delay: 4500, duration: 600 });
   ann('ROUND ' + S.rd, '#ffffff', 700);
   later(1, () => { ann('¡A HACKEAR!', '#e1ff00', 500); snd('ok'); });
 }
@@ -1120,7 +1125,7 @@ function updOver() {
   else if (n < 0) go('title');
 }
 function initEnd() {
-  drawStage(S.bg, 6); S.bg.fillStyle(0x000000, .55); S.bg.fillRect(0, 0, W, H);
+  drawStage(S.bg, 6); S.bg.fillStyle(0x000000, .85); S.bg.fillRect(0, 0, W, H);
   S.fl = 1.2; snd('ko');
   tx(W / 2, 190, '¡FOTO CON EL EQUIPO PLATANUS!', 32, '#e1ff00');
   tx(W / 2, 224, 'CAMPEÓN: ' + S.hum.name + ' · TEAM ' + TEAMS[S.hum.t].n, 18, '#ffffff');
