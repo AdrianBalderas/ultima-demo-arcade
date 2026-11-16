@@ -2,6 +2,8 @@
 // Juego de peleas 1 vs 1. Cada luchador es un integrante (generico y personalizable) de un equipo
 // ganador de Platanus Hack. Cada escenario es una sede. Jefes: Rafa (con Nacho en la camara) y El Deadline.
 
+// Todo el juego va dentro de una función: así el minificador acorta todos los nombres (ahorra ~2 KB)
+(() => {
 const W = 800, H = 600, GR = 520;
 
 // DO NOT replace existing keys — they match the physical arcade cabinet wiring.
@@ -791,7 +793,8 @@ function updSel(dt) {
   S.sel.forEach((s, i) => {
     if (s.ph === 9) return;
     const P = i ? 'P2_' : 'P1_';
-    if (s.ph === 0) {
+    if (s.ph < 3 && pr(i ? 'START2' : 'START1')) { s.name = s.ph > 1 ? s.nm.join('').trim() || 'P' + (i + 1) : S.names[i] || 'P' + (i + 1); s.ph = 3; snd('ok'); }
+    else if (s.ph === 0) {
       let ch = 0;
       if (pr(P + 'D') || pr(P + 'R')) { s.t = SELT[(SELT.indexOf(s.t) + 1) % 8]; ch = 1; }
       if (pr(P + 'U') || pr(P + 'L')) { s.t = SELT[(SELT.indexOf(s.t) + 7) % 8]; ch = 1; }
@@ -870,17 +873,35 @@ function quote(f) {
   if (S.np === 1 && f.t === 8) return S.ch[0] === 0 ? 'DORMISTE. YO NUNCA DUERMO.' : 'TE VES CANSADO. PERFECTO.';
   return QT[f.t];
 }
+// Intro tipo cómic: 3 viñetas antes de la primera pelea (botón 1 = siguiente, START = saltar)
+const STY = [
+  [0, 'PLATANUS HACK 26 · 7 SEDES', '7 EQUIPOS GANARON SU SEDE.\nTODOS QUIEREN LA FOTO CON EL EQUIPO PLATANUS.'],
+  [6, 'PLATANUS HQ · VIERNES 20 DE NOVIEMBRE', 'RAFA: «LA FINAL ES EN SANTIAGO.\nSOLO UN EQUIPO SALE EN LA FOTO.»'],
+  [7, 'SANTIAGO, CHILE · 36 HORAS', ''],
+];
 function initStory() {
-  menuBg(S.bg);
-  tx(W / 2, 90, 'DESTINO · SANTIAGO, CHILE', 11, '#b8c48d');
-  tx(W / 2, 140, '20 DE NOVIEMBRE', 40, '#f2ff00').setShadow(0, 0, '#f2ff00', 14, false, true);
-  tx(W / 2, 250, '7 SEDES. 7 CAMPEONES.\n36 HORAS PARA LLEGAR\nA LA FOTO CON EL EQUIPO PLATANUS.\n\nCADA DECISIÓN DE TU EQUIPO\nCAMBIA LO QUE VIENE.', 18, '#ffffff');
-  tx(W / 2, 400, 'TU EQUIPO: ' + TEAMS[S.hum.t].n + ' (' + TEAMS[S.hum.t].c + ')', 16, '#' + TEAMS[S.hum.t].col.toString(16).padStart(6, '0'));
-  S.b1 = tx(W / 2, 520, 'BOTÓN 1 · EMPEZAR', 16, '#b8c48d');
+  const m = (i, t, l) => mkF(i, t, l, '', 1);
+  S.sf = [0, 1, 2, 3, 4, 5, 6].map(t => m(0, t, TEAMS[t].m[0]));
+  S.sr = m(0, 7, TEAMS[7].m[0]); S.sd = m(1, 8, TEAMS[8].m[0]); S.sh = m(0, S.hum.t, S.hum.lk);
+  panel(0);
 }
-function updStory() {
-  S.b1.setAlpha(S.T % 1 < .6 ? 1 : .4);
-  if (S.st > .4 && (pr('P1_1') || pr('START1') || S.st > 9)) nextArcade();
+function panel(k) {
+  clr(); S.sp = k; S.st = 0; S.flat = 0;
+  const P = STY[k], g = S.bg;
+  drawStage(g, P[0]); g.fillStyle(0, .3); g.fillRect(0, 0, W, H);
+  g.fillStyle(0, .85); g.fillRect(0, 0, W, 52); g.fillRect(0, 482, W, 118);
+  tx(W / 2, 26, P[1], 18, '#e1ff00');
+  tx(W / 2, 528, P[2] || 'TU EQUIPO: ' + TEAMS[S.hum.t].n + '. 5 PELEAS EN 36 HORAS.\nCADA DECISIÓN CAMBIA EL FINAL.', 17);
+  tx(W - 12, 584, k + 1 + '/3 · BOTÓN 1 SIGUE · START SALTA', 10, '#b8c48d', 1);
+}
+function updStory(dt) {
+  const g = S.g, k = S.sp, d = (f, x, y, s, fc) => { f.anim += dt; f.face = fc; drawF(g, f, x, y, s); };
+  g.clear();
+  if (!k) S.sf.forEach((f, i) => d(f, 130 + i * 90, 452 + (i & 1) * 22, 1, i < 3 ? 1 : i > 3 ? -1 : 1));
+  else if (k < 2) d(S.sr, 400, 478, 1.9, 1);
+  else { d(S.sh, 240, 478, 1.7, 1); d(S.sd, 560, 478, 1.7, -1); }
+  if (S.st > .3 && pr('START1')) return nextArcade();
+  if (S.st > .3 && pr('P1_1') || S.st > (k > 1 ? 7 : 5)) k < 2 ? panel(k + 1) : nextArcade();
 }
 function initCho(k) {
   S.ck = k; S.cs = 0;
@@ -1121,3 +1142,4 @@ function updEnd(dt) {
   banana(g, 660, 470, 40, 16);
   if (S.st > 1 && (pr('START1') || pr('START2'))) go('title');
 }
+})();
