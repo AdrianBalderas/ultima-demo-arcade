@@ -628,21 +628,21 @@ function codeRain(g, f) {
   }
 }
 
+// El Deadline: un reloj despertador con el mismo pixel art suavizado; las manecillas avanzan a saltos (tic, tic)
 function drawClock(g, f, X, Y, sc) {
-  const r = 58 * sc, cy = Y - 92 * sc, ps = pose(f);
-  if (ps === 'ko') { g.fillStyle(0xff3b3b); g.fillEllipse(X, Y - 20, r * 2.2, 40); return; }
-  g.fillStyle(0x111111); g.fillRect(X - 26 * sc, Y - 40 * sc, 12 * sc, 40 * sc); g.fillRect(X + 14 * sc, Y - 40 * sc, 12 * sc, 40 * sc);
-  g.fillStyle(0xbbbbbb); g.fillCircle(X - 38 * sc, cy - r * .85, 14 * sc); g.fillCircle(X + 38 * sc, cy - r * .85, 14 * sc);
-  g.fillStyle(f.fl > 0 ? 0xffffff : 0xff3b3b); g.fillCircle(X, cy, r);
-  g.fillStyle(0xfff4e0); g.fillCircle(X, cy, r * .8);
-  g.fillStyle(0x111111);
-  for (let k = 0; k < 12; k++) g.fillRect(X + _mc(k * .5236) * r * .68 - 2, cy + _ms(k * .5236) * r * .68 - 2, 4, 4);
-  g.lineStyle(5 * sc, 0x111111);
-  g.lineBetween(X, cy, X + _mc(f.anim * 6) * r * .65, cy + _ms(f.anim * 6) * r * .65);
-  g.lineBetween(X, cy, X + _mc(f.anim * .6) * r * .42, cy + _ms(f.anim * .6) * r * .42);
-  g.fillStyle(0x111111); g.fillRect(X - 22 * sc, cy - 22 * sc, 14 * sc, 6 * sc); g.fillRect(X + 8 * sc, cy - 22 * sc, 14 * sc, 6 * sc);
-  if (ps === 'punch' || ps === 'cast') { g.fillStyle(0xff3b3b); g.fillRect(X + (f.face > 0 ? r - 6 : -r - 44) * 1, cy, 50 * sc, 12 * sc); }
-  if (f.stun > 0) { g.fillStyle(0xffe066); g.fillRect(X + _mc(S.T * 6) * 30 - 3, cy - r - 14, 6, 6); }
+  const ps = pose(f), L = [], cy = -19;
+  if (ps === 'ko') { g.fillStyle(0xff3b3b); g.fillEllipse(X, Y - 20, 128 * sc, 40); return; }
+  const disc = (x, y, r, c) => { for (let k = -r; k <= r; k++) { const w = _mR(Math.sqrt(r * r - k * k)); L.push([x - w, y + k, w * 2 + 1, 1, c]); } };
+  const hand = (a, n) => { for (let i = 1; i <= n; i++) L.push([_mR(_mc(a) * i), cy + _mR(_ms(a) * i), 1, 1, 0x111111]); };
+  L.push([-6, -8, 3, 8, 0x222222], [3, -8, 3, 8, 0x222222]);
+  disc(-8, cy - 10, 3, 0xc8c8c8); disc(8, cy - 10, 3, 0xc8c8c8);
+  disc(0, cy, 11, f.fl > 0 ? 0xffffff : 0xff3b3b); disc(0, cy, 9, 0xfff4e0);
+  for (let k = 0; k < 12; k++) L.push([_mR(_mc(k * .5236) * 7.5), cy + _mR(_ms(k * .5236) * 7.5), 1, 1, 0x111111]);
+  hand(_mR(f.anim * 6 / .5236) * .5236, 7); hand(_mR(f.anim * .6 / 1.5708) * 1.5708, 4);
+  L.push([-6, cy - 5, 4, 1, 0x111111], [2, cy - 5, 4, 1, 0x111111], [-1, cy, 2, 2, 0xff3b3b]);
+  paint(inked(L), f.face, X, Y, 5 * sc);
+  if (ps === 'punch' || ps === 'cast') { g.fillStyle(0xff3b3b); g.fillRect(X + (f.face > 0 ? 50 * sc : -100 * sc), Y - 92 * sc, 50 * sc, 12 * sc); }
+  if (f.stun > 0) { g.fillStyle(0xffe066); g.fillRect(X + _mc(S.T * 6) * 30 - 3, Y - 170 * sc, 6, 6); }
 }
 
 
