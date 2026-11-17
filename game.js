@@ -171,6 +171,8 @@ function go(s, arg) {
 function update(time, delta) {
   const dt = _mn(delta / 1000, .05);
   S.T += dt; S.st += dt; S.dt = dt; S.spn = 0;
+  // la caché de poses se vacía al inicio del cuadro, cuando ninguna imagen se está dibujando todavía
+  if (S.tc && S.tc.size > 120) { for (const o of S.spr) o.setTexture('__DEFAULT').setVisible(false); for (const k of S.tc.values()) S.sc.textures.remove(k); S.tc.clear(); }
   ({ title: updTitle, sel: updSel, vs: updVs, fight: updFight, res: updRes, over: updOver, end: updEnd, story: updStory, cho: updCho })[S.scr](dt);
   for (let i = S.spn; i < S.spr.length; i++) S.spr[i].setVisible(false);
   music();
@@ -444,6 +446,31 @@ function sx2(A, n) {
   }
   return B;
 }
+// Pinta una lista de rectángulos [x, y, w, h, color] (unidades, pies en 0,0) en una rejilla 48x48,
+// la suaviza con Scale2x x2 y la guarda en caché como textura; la muestra con una imagen del pool.
+const V = c => 0xff000000 | (c & 255) << 16 | c & 0xff00 | c >> 16 & 255;
+function paint(RL, fc, X, Y, U, gone, k = '') {
+  const Z = 48, C = S.tc || (S.tc = new Map()), key = fc + RL.join() + k;
+  let tk = C.get(key);
+  if (!tk) {
+    const A = new Uint32Array(Z * Z);
+    for (let i = 0; i < RL.length; i += 5) for (let y = RL[i + 1]; y < RL[i + 1] + RL[i + 3]; y++) for (let x = RL[i]; x < RL[i] + RL[i + 2]; x++) { const gx = (fc > 0 ? x : -x - 1) + 24, gy = y + 44; if (gx >= 0 && gx < Z && gy >= 0 && gy < Z && !(gone && gone(x, y))) A[gy * Z + gx] = RL[i + 4]; }
+    tk = 'px' + (S.tn = (S.tn || 0) + 1);
+    const t = S.sc.textures.createCanvas(tk, Z * 4, Z * 4), x = t.getContext(), d = x.createImageData(Z * 4, Z * 4);
+    d.data.set(new Uint8Array(sx2(sx2(A, Z), Z * 2).buffer)); x.putImageData(d, 0, 0); t.setFilter(1); t.refresh();
+    C.set(key, tk);
+  }
+  let o = S.spr[S.spn++];
+  if (!o) S.spr.push(o = S.sc.add.image(0, 0, tk).setOrigin(.5, 176 / 192).setDepth(6));
+  o.setTexture(tk).setPosition(X, Y).setScale(U / 4).setVisible(true);
+}
+// Contorno negro + colores con volumen (luz arriba, sombra abajo) a partir de rectángulos simples
+function inked(L, cut = -14) {
+  const RL = [];
+  for (const [dx, dy, w, h] of L) if (w * h > 1) RL.push(dx - 1, dy - 1, w + 2, h + 2, V(0x0a0a0a));
+  for (const [dx, dy, w, h, c] of L) RL.push(dx, dy, w, h, V(lerpC(c, dy > cut ? 0x1d1430 : 0xfff3d6, dy > cut ? .1 : .08)));
+  return RL;
+}
 function drawF(g, f, X, Y, sc = 1) {
   if (f.t === 8) return drawClock(g, f, X, Y, sc);
   const U = 5 * sc, fc = f.face, T = TEAMS[f.t], L = f.look, t = f.t;
@@ -569,23 +596,10 @@ function drawF(g, f, X, Y, sc = 1) {
   // Pixel art suavizado: el luchador se pinta en una rejilla de 48x48 y se escala con Scale2x dos veces
   // (el filtro de los emuladores): las diagonales y curvas quedan finas sin perder el estilo pixel.
   // Caché: la lista de rectángulos describe la pose exacta; si ya se suavizó antes, se reutiliza la textura.
-  const Z = 48, RL = [], V = c => 0xff000000 | (c & 255) << 16 | c & 0xff00 | c >> 16 & 255, M = f.mx > .25;
+  const RL = [], M = f.mx > .25;
   body((dx, dy, w, h) => { if (w * h > 2) RL.push(dx - 1, dy - 1, w + 2, h + 2, V(OC)); }, 1);
   body((dx, dy, w, h, c) => RL.push(dx, dy, w, h, V(f.mx > 0 ? lerpC(c, 0x00ff66, _mn(1, f.mx * 1.6)) : f.fl > 0 ? c : lerpC(c, dy > -14 ? 0x1d1430 : 0xfff3d6, dy > -14 ? .12 + (dy + 14) / 50 : .1))), 0);
-  const C = S.tc || (S.tc = new Map()), key = fc + RL.join() + (M ? S.T * 14 | 0 : '');
-  let tk = C.get(key);
-  if (!tk) {
-    const A = new Uint32Array(Z * Z);
-    for (let i = 0; i < RL.length; i += 5) for (let y = RL[i + 1]; y < RL[i + 1] + RL[i + 3]; y++) for (let x = RL[i]; x < RL[i] + RL[i + 2]; x++) { const gx = (fc > 0 ? x : -x - 1) + 24, gy = y + 44; if (gx >= 0 && gx < Z && gy >= 0 && gy < Z && !gone(x, y)) A[gy * Z + gx] = RL[i + 4]; }
-    tk = 'px' + (S.tn = (S.tn || 0) + 1);
-    const t = S.sc.textures.createCanvas(tk, Z * 4, Z * 4), x = t.getContext(), d = x.createImageData(Z * 4, Z * 4);
-    d.data.set(new Uint8Array(sx2(sx2(A, Z), Z * 2).buffer)); x.putImageData(d, 0, 0); t.setFilter(1); t.refresh();
-    if (C.size > 90) { const [k0, t0] = C.entries().next().value; C.delete(k0); S.sc.textures.remove(t0); }
-    C.set(key, tk);
-  }
-  let o = S.spr[S.spn++];
-  if (!o) S.spr.push(o = S.sc.add.image(0, 0, tk).setOrigin(.5, 176 / 192).setDepth(6));
-  o.setTexture(tk).setPosition(X, Y).setScale(U / 4).setVisible(true);
+  paint(RL, fc, X, Y, U, gone, M ? S.T * 14 | 0 : '');
   if (ps === 'punch') { g.fillStyle(W8, .45); g.fillRect(X + (fc > 0 ? 2 : -11) * U, Y - 20 * U, 9 * U, 2 * U); }
   if (ps === 'cast') { g.fillStyle(T.col, .5); g.fillCircle(X + fc * 12 * U, Y - 19 * U, 4 * U); }
   if (f.stun > 0) for (let k = 0; k < 3; k++) { g.fillStyle(0xffe066); g.fillRect(X + _mc(S.T * 6 + k * 2.1) * 22 * sc - 3, Y - 175 * sc + _ms(S.T * 6 + k * 2.1) * 6, 6, 6); }
@@ -642,8 +656,7 @@ function prop(g, id) {
   else if (id === 4) { R(-9, -9, 18, 7, 0xf1c40f); R(-9, -10, 18, 1, 0xc0392b); R(-9, -5, 18, 1, 0xe74c3c); R(-9, -3, 18, 1, 0x2980b9); for (let k = 0; k < 4; k++) R(-8 + k * 4, -8, 3, 2, 0x34495e); R(-6, -12, 5, 2, 0x8e5a2f); R(1, -12, 4, 2, 0x27ae60); R(-7, -2, 3, 2, 0x111111); R(4, -2, 3, 2, 0x111111); }
   else if (id > 7) { R(-10, -6, 19, 4, 0xf5f6f7); R(-12, -5, 2, 3, 0xf5f6f7); R(6, -11, 3, 5, 0xc0362c); R(-9, -5, 13, 1, 0x2980b9); R(-3, -3, 8, 1, 0xbdc3c7); R(-7, -2, 1, 2, 0x111111); R(4, -2, 1, 2, 0x111111); }
   else { R(0, -9, 1, 9, 0x5d4037); R(-3, -9, 7, 1, 0x5d4037); R(-1, -15, 3, 6, 0xe74c3c); R(0, -17, 3, 2, 0xe74c3c); R(3, -16, 1, 2, 0xffe066); R(1, -16, 1, 1, 0x111111); R(-2, -13, 2, 4, 0x2980b9); R(-1, -10, 2, 4, 0xf1c40f); }
-  const U = 4, X = 640, Y = GR - 2;
-  for (const ol of [1, 0]) for (const [dx, dy, w, h, c] of L) { g.fillStyle(ol ? 0x1d1430 : c); g.fillRect(X + (dx - ol) * U, Y + (dy - ol) * U, (w + 2 * ol) * U, (h + 2 * ol) * U); }
+  paint(inked(L), 1, 640, GR - 2, 4);
 }
 
 
@@ -658,11 +671,14 @@ function boost(f, id) {
   else { f.cd = [0, 0]; f.m = _mn(100, f.m + 40); flt(f, '¡BOOST GUACAMAYA: PODERES LISTOS!', '#f2ff00'); }
 }
 
+// Nacho, el camarógrafo de la transmisión: mismo estilo suavizado que los luchadores
 function nacho(g, x, y, s, flash, d = 1) {
-  const R = (dx, dy, w, h, c) => { g.fillStyle(c); g.fillRect(x + (d > 0 ? dx : -dx - w) * s, y + dy * s, w * s, h * s); };
-  R(-4, -10, 3, 10, 0x2d3047); R(1, -10, 3, 10, 0x2d3047); R(-5, -20, 10, 10, 0x1abc9c);
-  R(-4, -27, 8, 7, 0xe0ac69); R(-4, -28, 8, 2, 0x1b1b1b); R(-5, -27, 2, 3, 0x1b1b1b);
-  R(2, -19, 4, 2, 0xe0ac69); R(3, -25, 7, 5, 0x111111); R(9, -24, 2, 3, 0x555555); R(4, -26, 2, 1, 0x111111);
+  const sk = 0xe0ac69, L = [[-4, -10, 3, 10, 0x2d3047], [1, -10, 3, 10, 0x2d3047], [-5, -1, 4, 1, 0xf2f2f2], [1, -1, 4, 1, 0xf2f2f2],
+    [-7, -19, 2, 6, 0x17a589], [-7, -13, 2, 2, sk], [-5, -20, 10, 10, 0x1abc9c], [-1, -20, 1, 6, 0xe1ff00], [-2, -15, 3, 2, 0xffffff],
+    [-4, -28, 8, 8, sk], [-1, -22, 4, 1, 0x8a6a4a], [-5, -30, 9, 3, 0x1b1b1b], [-8, -29, 4, 2, 0x1b1b1b], [-5, -27, 2, 4, 0x333333],
+    [2, -19, 4, 2, sk], [3, -27, 8, 6, 0x2a2a2a], [4, -29, 5, 2, 0x111111], [11, -26, 3, 4, 0x4a4a4a], [13, -25, 1, 2, 0x66ccff],
+    [4, -26, 1, 1, S.T % 1 < .5 ? 0xff3b3b : 0x661111], [1, -26, 2, 2, 0x111111]];
+  paint(inked(L), d, x, y, s);
   if (flash) { g.fillStyle(0xffffff, .9); g.fillCircle(x + d * 12 * s, y - 22 * s, 9 * s); }
 }
 
