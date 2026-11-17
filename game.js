@@ -150,17 +150,22 @@ function create() {
   this.events.once('shutdown', () => { window.removeEventListener('keydown', dn); window.removeEventListener('keyup', up); });
   S.bg = this.add.graphics().setDepth(0);
   S.g = this.add.graphics().setDepth(5);
+  S.bgk = this.add.image(0, 0, '__DEFAULT').setOrigin(0).setDepth(0);
   S.h = this.add.graphics().setDepth(9); S.spr = []; S.spn = 0;
   S.ov = this.add.rectangle(W / 2, H / 2, W, H, 0xffffff).setDepth(30).setAlpha(0);
   go('title');
   load();
 }
 
+// El fondo es estático: se 'hornea' en una imagen una vez por pantalla (la trama manga son miles de puntos
+// y Phaser volvería a dibujarlos cada cuadro).
+function bake() { const t = S.sc.textures; if (t.exists('bgk')) t.remove('bgk'); S.bg.generateTexture('bgk', W, H); S.bgk.setTexture('bgk'); S.bg.clear(); }
 function go(s, arg) {
   clr();
   S.scr = s; S.st = 0; S.flat = s !== 'vs' && s !== 'fight';
   S.bg.clear(); S.g.clear(); S.h.clear();
   ({ title: initTitle, sel: initSel, vs: initVs, fight: initFight, res: initRes, over: initOver, end: initEnd, story: initStory, cho: initCho })[s](arg);
+  bake();
 }
 
 function update(time, delta) {
@@ -563,17 +568,24 @@ function drawF(g, f, X, Y, sc = 1) {
   const gone = (dx, dy) => f.mx > .25 && ((dx * 7 + dy * 13 + ((S.T * 14) | 0)) & 7) / 8 < (f.mx - .25) * 1.4;
   // Pixel art suavizado: el luchador se pinta en una rejilla de 48x48 y se escala con Scale2x dos veces
   // (el filtro de los emuladores): las diagonales y curvas quedan finas sin perder el estilo pixel.
-  const Z = 48, A = S.ga || (S.ga = new Uint32Array(Z * Z)), V = c => 0xff000000 | (c & 255) << 16 | c & 0xff00 | c >> 16 & 255;
-  A.fill(0);
-  const put = (dx, dy, w, h, c) => { for (let y = dy; y < dy + h; y++) for (let x = dx; x < dx + w; x++) { const gx = (fc > 0 ? x : -x - 1) + 24, gy = y + 44; if (gx >= 0 && gx < Z && gy >= 0 && gy < Z && !gone(x, y)) A[gy * Z + gx] = c; } };
-  body((dx, dy, w, h) => { if (w * h > 2) put(dx - 1, dy - 1, w + 2, h + 2, V(OC)); }, 1);
-  body((dx, dy, w, h, c) => put(dx, dy, w, h, V(f.mx > 0 ? lerpC(c, 0x00ff66, _mn(1, f.mx * 1.6)) : f.fl > 0 ? c : lerpC(c, dy > -14 ? 0x1d1430 : 0xfff3d6, dy > -14 ? .12 + (dy + 14) / 50 : .1))), 0);
-  let o = S.spr[S.spn];
-  if (!o) { const k = 'px' + S.spn; S.sc.textures.createCanvas(k, Z * 4, Z * 4); S.spr.push(o = S.sc.add.image(0, 0, k).setOrigin(.5, 176 / 192).setDepth(6)); o.c = S.sc.textures.get(k); o.c.setFilter(1); o.d = o.c.getContext().createImageData(Z * 4, Z * 4); }
-  S.spn++;
-  const B = sx2(sx2(A, Z), Z * 2);
-  o.d.data.set(new Uint8Array(B.buffer)); o.c.getContext().putImageData(o.d, 0, 0); o.c.refresh();
-  o.setPosition(X, Y).setScale(U / 4).setVisible(true);
+  // Caché: la lista de rectángulos describe la pose exacta; si ya se suavizó antes, se reutiliza la textura.
+  const Z = 48, RL = [], V = c => 0xff000000 | (c & 255) << 16 | c & 0xff00 | c >> 16 & 255, M = f.mx > .25;
+  body((dx, dy, w, h) => { if (w * h > 2) RL.push(dx - 1, dy - 1, w + 2, h + 2, V(OC)); }, 1);
+  body((dx, dy, w, h, c) => RL.push(dx, dy, w, h, V(f.mx > 0 ? lerpC(c, 0x00ff66, _mn(1, f.mx * 1.6)) : f.fl > 0 ? c : lerpC(c, dy > -14 ? 0x1d1430 : 0xfff3d6, dy > -14 ? .12 + (dy + 14) / 50 : .1))), 0);
+  const C = S.tc || (S.tc = new Map()), key = fc + RL.join() + (M ? S.T * 14 | 0 : '');
+  let tk = C.get(key);
+  if (!tk) {
+    const A = new Uint32Array(Z * Z);
+    for (let i = 0; i < RL.length; i += 5) for (let y = RL[i + 1]; y < RL[i + 1] + RL[i + 3]; y++) for (let x = RL[i]; x < RL[i] + RL[i + 2]; x++) { const gx = (fc > 0 ? x : -x - 1) + 24, gy = y + 44; if (gx >= 0 && gx < Z && gy >= 0 && gy < Z && !gone(x, y)) A[gy * Z + gx] = RL[i + 4]; }
+    tk = 'px' + (S.tn = (S.tn || 0) + 1);
+    const t = S.sc.textures.createCanvas(tk, Z * 4, Z * 4), x = t.getContext(), d = x.createImageData(Z * 4, Z * 4);
+    d.data.set(new Uint8Array(sx2(sx2(A, Z), Z * 2).buffer)); x.putImageData(d, 0, 0); t.setFilter(1); t.refresh();
+    if (C.size > 90) { const [k0, t0] = C.entries().next().value; C.delete(k0); S.sc.textures.remove(t0); }
+    C.set(key, tk);
+  }
+  let o = S.spr[S.spn++];
+  if (!o) S.spr.push(o = S.sc.add.image(0, 0, tk).setOrigin(.5, 176 / 192).setDepth(6));
+  o.setTexture(tk).setPosition(X, Y).setScale(U / 4).setVisible(true);
   if (ps === 'punch') { g.fillStyle(W8, .45); g.fillRect(X + (fc > 0 ? 2 : -11) * U, Y - 20 * U, 9 * U, 2 * U); }
   if (ps === 'cast') { g.fillStyle(T.col, .5); g.fillCircle(X + fc * 12 * U, Y - 19 * U, 4 * U); }
   if (f.stun > 0) for (let k = 0; k < 3; k++) { g.fillStyle(0xffe066); g.fillRect(X + _mc(S.T * 6 + k * 2.1) * 22 * sc - 3, Y - 175 * sc + _ms(S.T * 6 + k * 2.1) * 6, 6, 6); }
@@ -1001,6 +1013,7 @@ function panel(k) {
   tx(W / 2, 26, P[1], 18, '#e1ff00');
   tx(W / 2, 528, P[2] || 'TU EQUIPO: ' + TEAMS[S.hum.t].n + '. 5 PELEAS EN 36 HORAS.\nCADA DECISIÓN CAMBIA EL FINAL.', 17);
   tx(W - 12, 584, k + 1 + '/3 · BOTÓN 1 SIGUE · START SALTA', 10, '#b8c48d', 1);
+  bake();
 }
 function updStory(dt) {
   const g = S.g, k = S.sp, d = (f, x, y, s, fc) => { f.anim += dt; f.face = fc; drawF(g, f, x, y, s); };
