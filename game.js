@@ -150,7 +150,7 @@ function create() {
   this.events.once('shutdown', () => { window.removeEventListener('keydown', dn); window.removeEventListener('keyup', up); });
   S.bg = this.add.graphics().setDepth(0);
   S.g = this.add.graphics().setDepth(5);
-  S.h = this.add.graphics().setDepth(9);
+  S.h = this.add.graphics().setDepth(9); S.spr = []; S.spn = 0;
   S.ov = this.add.rectangle(W / 2, H / 2, W, H, 0xffffff).setDepth(30).setAlpha(0);
   go('title');
   load();
@@ -165,8 +165,9 @@ function go(s, arg) {
 
 function update(time, delta) {
   const dt = _mn(delta / 1000, .05);
-  S.T += dt; S.st += dt; S.dt = dt;
+  S.T += dt; S.st += dt; S.dt = dt; S.spn = 0;
   ({ title: updTitle, sel: updSel, vs: updVs, fight: updFight, res: updRes, over: updOver, end: updEnd, story: updStory, cho: updCho })[S.scr](dt);
+  for (let i = S.spn; i < S.spr.length; i++) S.spr[i].setVisible(false);
   music();
   if (S.fl > 0) { S.fl -= dt; S.ov.setAlpha(_mx(0, _mn(1, S.fl * 2.5))); } else S.ov.setAlpha(0);
   S.c.p = Object.create(null);
@@ -429,6 +430,15 @@ function heroMark(g, f, x, y, s) {
   else { g.strokeRect(x - r / 2, yy - r / 2, r, r); g.lineBetween(x - r / 2, yy - r / 2, x + r / 2, yy + r / 2); }
 }
 
+function sx2(A, n) {
+  const m = n * 2, B = new Uint32Array(m * m);
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const P = A[y * n + x], a = y ? A[y * n + x - n] : P, b = x < n - 1 ? A[y * n + x + 1] : P, c = x ? A[y * n + x - 1] : P, d = y < n - 1 ? A[y * n + x + n] : P, i = y * 2 * m + x * 2;
+    B[i] = c == a && c != d && a != b ? a : P; B[i + 1] = a == b && a != c && b != d ? b : P;
+    B[i + m] = d == c && d != b && c != a ? c : P; B[i + m + 1] = b == d && b != a && d != c ? d : P;
+  }
+  return B;
+}
 function drawF(g, f, X, Y, sc = 1) {
   if (f.t === 8) return drawClock(g, f, X, Y, sc);
   const U = 5 * sc, fc = f.face, T = TEAMS[f.t], L = f.look, t = f.t;
@@ -551,12 +561,19 @@ function drawF(g, f, X, Y, sc = 1) {
   // pass 1: very dark purple outline (not pure black); pass 2: colors (green while turning into code)
   const OC = f.fl > 0 ? W8 : f.mx > 0 ? 0x003b1a : 0x0a0a0a;
   const gone = (dx, dy) => f.mx > .25 && ((dx * 7 + dy * 13 + ((S.T * 14) | 0)) & 7) / 8 < (f.mx - .25) * 1.4;
-  body((dx, dy, w, h) => { if (w * h > 2 && !gone(dx, dy)) { g.fillStyle(OC); g.fillRect(X + (fc > 0 ? dx - 1 : -dx - w - 1) * U, Y + (dy - 1) * U, (w + 2) * U, (h + 2) * U); } }, 1);
-  // luz de borde: una orilla clara en la espalda separa al luchador del fondo
-  if (!f.fl) body((dx, dy, w, h) => { if (w * h > 2 && !gone(dx, dy)) { g.fillStyle(0xfff3d6, .7); g.fillRect(X + (fc > 0 ? dx - .4 : -dx - w + .4) * U, Y + dy * U, w * U, h * U); } }, 1);
-  body((dx, dy, w, h, c) => { if (gone(dx, dy)) return; g.fillStyle(f.mx > 0 ? lerpC(c, 0x00ff66, _mn(1, f.mx * 1.6)) : c); g.fillRect(X + (fc > 0 ? dx : -dx - w) * U, Y + dy * U, w * U, h * U); }, 0);
-  // volumen: luz arriba y sombra abajo sobre todo el cuerpo
-  if (!f.fl) body((dx, dy, w, h) => { if (!gone(dx, dy)) { g.fillStyle(dy > -14 ? 0x1d1430 : 0xffffff, dy > -14 ? .16 + (dy + 14) / 60 : .08); g.fillRect(X + (fc > 0 ? dx : -dx - w) * U, Y + dy * U, w * U, h * U); } }, 1);
+  // Pixel art suavizado: el luchador se pinta en una rejilla de 48x48 y se escala con Scale2x dos veces
+  // (el filtro de los emuladores): las diagonales y curvas quedan finas sin perder el estilo pixel.
+  const Z = 48, A = S.ga || (S.ga = new Uint32Array(Z * Z)), V = c => 0xff000000 | (c & 255) << 16 | c & 0xff00 | c >> 16 & 255;
+  A.fill(0);
+  const put = (dx, dy, w, h, c) => { for (let y = dy; y < dy + h; y++) for (let x = dx; x < dx + w; x++) { const gx = (fc > 0 ? x : -x - 1) + 24, gy = y + 44; if (gx >= 0 && gx < Z && gy >= 0 && gy < Z && !gone(x, y)) A[gy * Z + gx] = c; } };
+  body((dx, dy, w, h) => { if (w * h > 2) put(dx - 1, dy - 1, w + 2, h + 2, V(OC)); }, 1);
+  body((dx, dy, w, h, c) => put(dx, dy, w, h, V(f.mx > 0 ? lerpC(c, 0x00ff66, _mn(1, f.mx * 1.6)) : f.fl > 0 ? c : lerpC(c, dy > -14 ? 0x1d1430 : 0xfff3d6, dy > -14 ? .12 + (dy + 14) / 50 : .1))), 0);
+  let o = S.spr[S.spn];
+  if (!o) { const k = 'px' + S.spn; S.sc.textures.createCanvas(k, Z * 4, Z * 4); S.spr.push(o = S.sc.add.image(0, 0, k).setOrigin(.5, 176 / 192).setDepth(6)); o.c = S.sc.textures.get(k); o.c.setFilter(1); o.d = o.c.getContext().createImageData(Z * 4, Z * 4); }
+  S.spn++;
+  const B = sx2(sx2(A, Z), Z * 2);
+  o.d.data.set(new Uint8Array(B.buffer)); o.c.getContext().putImageData(o.d, 0, 0); o.c.refresh();
+  o.setPosition(X, Y).setScale(U / 4).setVisible(true);
   if (ps === 'punch') { g.fillStyle(W8, .45); g.fillRect(X + (fc > 0 ? 2 : -11) * U, Y - 20 * U, 9 * U, 2 * U); }
   if (ps === 'cast') { g.fillStyle(T.col, .5); g.fillCircle(X + fc * 12 * U, Y - 19 * U, 4 * U); }
   if (f.stun > 0) for (let k = 0; k < 3; k++) { g.fillStyle(0xffe066); g.fillRect(X + _mc(S.T * 6 + k * 2.1) * 22 * sc - 3, Y - 175 * sc + _ms(S.T * 6 + k * 2.1) * 6, 6, 6); }
