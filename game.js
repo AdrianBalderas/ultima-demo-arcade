@@ -45,8 +45,8 @@ const SN = ['SANTIAGO 2024', 'SANTIAGO 2025 · MUT, LAS CONDES', 'BUENOS AIRES 2
 const SL = ['CORDILLERA · SANTIAGO', 'TORRE MUT · LAS CONDES', 'OBELISCO · BUENOS AIRES', 'ÁNGEL + LÍNEA 1 · CDMX', 'MONSERRATE · BOGOTÁ', 'EL ÁVILA · CARACAS', 'HQ PLATANUS', 'CIERRE DE CRONOGRAMA', 'GOLDEN GATE · SAN FRANCISCO'];
 const ROOT = [110, 98, 123, 110, 92, 104, 130, 82, 98];
 const PAT = [0, 0, 12, 0, 7, 0, 10, 12, 0, 0, 12, 0, 5, 7, 3, 5];
-const PUNCH = { k: 'p', s: .05, a: .08, r: .14, rng: 70, d: 5, y: -108 };
-const KICK = { k: 'k', s: .09, a: .1, r: .22, rng: 95, d: 8, y: -68 };
+const PUNCH = { k: 'p', s: .05, a: .08, r: .14, rng: 80, d: 5, y: -124 };
+const KICK = { k: 'k', s: .09, a: .1, r: .22, rng: 109, d: 8, y: -78 };
 
 const S = { ch: [], ui: [], tw: {}, T: 0, pr: [], pa: [], walls: [], tm: [], imp: [], hst: 0 };
 const ST = window.platanusArcadeStorage;
@@ -185,7 +185,7 @@ function startAtk(f, a) { f.atk = a; f.at = 0; f.hd = 0; f.lh = -1; if (f.gr && 
 function inRange(f, o, a) {
   const dx = (o.x - f.x) * f.face;
   if (dx < -10 || dx > a.rng + 24) return false;
-  const ay = f.y + a.y, top = o.y - (o.cr ? 92 : 148);
+  const ay = f.y + a.y, top = o.y - (o.cr ? 106 : 170);
   return ay >= top - 8 && ay <= o.y + 4;
 }
 function shoot(f, k, o = {}) {
@@ -345,6 +345,7 @@ function hurt(o, d, f, fx) {
     if (!S.fh) { S.fh = 1; flt(f, '¡PRIMER COMMIT!', '#e1ff00'); }
     hype(d * 6 | 0, f); if (f.cb === 3) chat('c'); S.hy = .45;
     if (d >= 8 && _mr() < .6) ono(o.x - dir * 30, o.y - 150);
+    if (d >= 8) { S.sl = .14; S.slx = o.x; S.sly = o.y - 110; }
     if (f.cb >= 4 && f.cb % 4 === 0) { o.kx = dir * 520; o.iv = .5; o.hs = .3; }
     if (fx.stun) o.stun = fx.stun;
     if (fx.inv) { o.inv = fx.inv; flt(o, '¿EH?', '#c39bd3'); }
@@ -360,7 +361,7 @@ function hurt(o, d, f, fx) {
   f.m = _mn(100, f.m + d * .9); o.m = _mn(100, o.m + d * .5);
   if (o.hp <= 0) {
     o.ko = 1; o.gr = 0; o.vy = -420; o.kx = dir * 260;
-    ann('¡DEPLOYADO!', '#ff6ec7', 1400); snd('ko'); chat('k'); hype(600, f); S.hy = 1.4; S.sc.cameras.main.shake(300, .012).zoomTo(1.3, 250).pan(o.x, o.y - 100, 250); S.slo = 1.2;
+    ann('¡DEPLOYADO!', '#ff6ec7', 1400); snd('ko'); chat('k'); hype(600, f); S.hy = 1.4; S.sl = .5; S.slx = o.x; S.sly = o.y - 110; S.sc.cameras.main.shake(300, .012).zoomTo(1.3, 250).pan(o.x, o.y - 100, 250); S.slo = 1.2;
     endRound(f);
   }
 }
@@ -388,8 +389,9 @@ function hype(n, f) {
   S.vT.setText('● EN VIVO · ' + S.vw.toLocaleString('es-MX') + ' VIENDO');
 }
 // Onomatopeyas de cómic en los golpes fuertes
+const JP = (c => (c.font = '20px sans-serif', c.measureText('ドン').width !== c.measureText('\u0fff\u0fff').width))(document.createElement('canvas').getContext('2d'));
 function ono(x, y) {
-  const t = S.sc.add.text(x + rnd(-30, 30), y + rnd(-20, 10), ['¡PAF!', '¡ZAS!', '¡PUM!', '¡CRAC!', '¡TOING!'][_mr() * 5 | 0], { fontFamily: 'Impact, monospace', fontSize: '34px', color: '#ffe135', stroke: '#1d1430', strokeThickness: 7 }).setOrigin(.5).setDepth(16).setAngle(rnd(-18, 18)).setScale(.4);
+  const t = S.sc.add.text(x + rnd(-30, 30), y + rnd(-20, 10), (JP ? ['ドン!', 'バキッ!', 'ズガン!', 'ドカッ!', 'ゴッ!'] : ['¡PAF!', '¡ZAS!', '¡PUM!', '¡CRAC!', '¡TOING!'])[_mr() * 5 | 0], { fontFamily: 'Impact, sans-serif', fontSize: '54px', color: '#ffffff', stroke: '#0a0a0a', strokeThickness: 7 }).setOrigin(.5).setDepth(16).setAngle(rnd(-18, 18)).setScale(.4);
   S.sc.tweens.add({ targets: t, scale: 1, duration: 90 });
   S.sc.tweens.add({ targets: t, alpha: 0, delay: 380, duration: 250, onComplete: () => t.destroy() });
 }
@@ -492,7 +494,7 @@ function drawF(g, f, X, Y, sc = 1) {
       const hurt = ps === 'hurt', mad = ps === 'punch' || ps === 'kick' || ps === 'cast' || ps === 'wind';
       if (hurt) { Q(0, -24, 2, 1, dk); Q(3, -24, 2, 1, dk); Q(3, -22, 2, 2, 0x5a1f1f); }
       else {
-        Q(0, -25, 2, 2, W8); Q(3, -25, 2, 2, W8); Q(1, -25, 1, 2, dk); Q(4, -25, 1, 2, dk);
+        Q(0, -26, 2, 3, W8); Q(3, -26, 2, 3, W8); Q(1, -26, 1, 3, dk); Q(4, -26, 1, 3, dk); Q(1, -26, 1, 1, W8); Q(4, -26, 1, 1, W8);
         if (mad) { Q(0, -27, 1, 1, hc); Q(1, -26, 1, 1, hc); Q(3, -26, 1, 1, hc); Q(4, -27, 1, 1, hc); }
         else { Q(0, -27, 2, 1, hc); Q(3, -27, 2, 1, hc); }
         Q(ps === 'win' ? 2 : 3, -22, ps === 'win' ? 3 : 2, 1, 0x7a3b2e);
@@ -547,7 +549,7 @@ function drawF(g, f, X, Y, sc = 1) {
     else guard();
   };
   // pass 1: very dark purple outline (not pure black); pass 2: colors (green while turning into code)
-  const OC = f.fl > 0 ? W8 : f.mx > 0 ? 0x003b1a : 0x1d1430;
+  const OC = f.fl > 0 ? W8 : f.mx > 0 ? 0x003b1a : 0x0a0a0a;
   const gone = (dx, dy) => f.mx > .25 && ((dx * 7 + dy * 13 + ((S.T * 14) | 0)) & 7) / 8 < (f.mx - .25) * 1.4;
   body((dx, dy, w, h) => { if (w * h > 2 && !gone(dx, dy)) { g.fillStyle(OC); g.fillRect(X + (fc > 0 ? dx - 1 : -dx - w - 1) * U, Y + (dy - 1) * U, (w + 2) * U, (h + 2) * U); } }, 1);
   body((dx, dy, w, h, c) => { if (gone(dx, dy)) return; g.fillStyle(f.mx > 0 ? lerpC(c, 0x00ff66, _mn(1, f.mx * 1.6)) : c); g.fillRect(X + (fc > 0 ? dx : -dx - w) * U, Y + dy * U, w * U, h * U); }, 0);
@@ -814,6 +816,8 @@ function legacyPaperStage(g, id) {
   g.fillStyle(I); g.fillRect(0, GR, W, H - GR); g.fillStyle(C); g.fillRect(0, GR, W, 7); for (let x = -70; x < W; x += 88) { g.fillStyle(P, .1); g.fillTriangle(x, GR + 10, x + 34, GR + 10, x + 90, H); }
 }
 */
+// Trama de manga impreso: puntos que se agrandan hacia arriba del cielo
+function trama(g) { g.fillStyle(0, .1); for (let y = 0; y < GR; y += 8) for (let x = (y & 8) / 2; x < W; x += 8) g.fillCircle(x, y, 2.4 * (1 - y / GR)); }
 function drawStage(g, id) {
   const C = [0x326b84, 0x3e8871, 0xc94f5a, 0xd67c38, 0x40845b, 0x248aaa, 0xd0a52e, 0xc84c50, 0xd06d3f][id] || 0xc94f5a, S = [0xa8d9ef, 0xb9e4ee, 0xf4d0cf, 0xffd46d, 0x9fd1bd, 0x9bd9e9, 0xffdf7c, 0xf4c3b8, 0xa8d5ed][id] || 0xf2e3bf, F = [0x496f5b, 0x5f746d, 0x627987, 0x9b7042, 0x487159, 0x3d7d69, 0x79652c, 0x6c4d50, 0x397b9e][id] || 0x201a20, I = 0x201a20, L = lerpC(S, 0xffffff, .5), sun = id & 1 ? 626 : 164;
   g.fillStyle(S); g.fillRect(0, 0, W, H); g.fillStyle(L, .78); g.fillCircle(sun, 152, 58); g.fillStyle(0xffffff, .32); for (let k = 0; k < 3; k++) g.fillEllipse(48 + (k * 247 + id * 61) % 690, 105 + (k & 1) * 46, 118, 24);
@@ -1010,7 +1014,7 @@ function updCho() {
 
 // ---------- Pantalla: VS ----------
 function initVs() {
-  drawStage(S.bg, S.stage);
+  drawStage(S.bg, S.stage); trama(S.bg);
   S.bg.fillStyle(0x000000, .55); S.bg.fillRect(0, 0, W, H);
   const [a, b] = S.F;
   a.face = 1; b.face = -1;
@@ -1022,6 +1026,7 @@ function initVs() {
   });
   if (S.np === 1) tx(W / 2, 30, HR[S.li] + (S.li === 3 ? ' (NACHO EN LA CÁMARA)' : ''), 16, '#ffffff');
   S.vsT = tx(W / 2, 290, 'VS', 64, '#ffffff');
+  if (JP && S.F[1].t > 6) for (const [x, y] of [[640, 220], [700, 330], [610, 420]]) tx(x, y, 'ゴゴゴ', 30, '#9b59d0').setAngle(-12);
   // Ficha de ronda impresa: tinta azul, roja y papel, sin el marco neón anterior.
   const g = S.bg;
   g.fillStyle(CY); g.fillRect(0, 0, 18, H); g.fillStyle(PK); g.fillRect(W - 18, 0, 18, H); g.fillStyle(CR); g.fillRect(28, 516, W - 56, 70); g.fillStyle(IV); g.fillRect(38, 526, W - 76, 50);
@@ -1038,7 +1043,7 @@ function updVs(dt) {
 
 // ---------- Pantalla: pelea ----------
 function initFight() {
-  drawStage(S.bg, S.stage);
+  drawStage(S.bg, S.stage); trama(S.bg);
   S.rd = 1; S.F.forEach(f => { f.wins = 0; f.m = 0; });
   S.F.forEach((f, i) => {
     const L = !i, T = TEAMS[f.t];
@@ -1082,7 +1087,7 @@ function endRound(w) {
 }
 function updFight(dt) {
   const [a, b] = S.F;
-  S.hy -= dt;
+  S.hy -= dt; S.sl -= dt;
   if ((S.ct -= dt) < 0) { S.ct = rnd(2.5, 5); chat('i', _mr() < .3 && 'VAMOS ' + (_mr() < .5 ? a : b).name); hype(rnd(10, 60) | 0); }
   if (S.hst > 0) { S.hst -= dt; drawFight(0); return; }
   if (S.slo > 0) { S.slo -= dt; dt *= .3; if (S.slo <= 0) S.sc.cameras.main.zoomTo(1, 200).pan(W / 2, H / 2, 200); }
@@ -1104,7 +1109,7 @@ function updFight(dt) {
       const o = S.F[1 - p.ow];
       if (!dead && !p.fx.ub) for (const w of S.walls) if (w.ow !== p.ow && _ma(p.x - w.x) < 16 && p.y > GR - 110) { dead = true; spark(p.x, p.y, 0x8d6e4f, 6); snd('blk'); }
       if (!dead) {
-        const top = o.y - (o.cr ? 92 : 148);
+        const top = o.y - (o.cr ? 106 : 170);
         if (_ma(p.x - o.x) < p.w / 2 + 20 && p.y + p.h / 2 > top && p.y - p.h / 2 < o.y) { hurt(o, p.d, S.F[p.ow], p.fx); dead = true; }
       }
       if (!dead && !p.nc && !p.fx.ub) for (const q of S.pr) if (q !== p && q.ow !== p.ow && !q.nc && !q.fx.ub && _ma(q.x - p.x) < 22 && _ma(q.y - p.y) < 22) { q.l = 0; dead = true; spark(p.x, p.y, 0xffffff, 10); snd('blk'); }
@@ -1140,7 +1145,12 @@ function drawFight(dt) {
   stageFx(g, S.stage);
   for (const w of S.walls) { g.fillStyle(0x6d4c2f); g.fillRect(w.x - 14, GR - 105, 6, 105); g.fillRect(w.x + 8, GR - 105, 6, 105); g.fillStyle(0x8d6e4f); for (let y = GR - 98; y < GR; y += 20) g.fillRect(w.x - 14, y, 28, 7); }
   for (const f of S.F) { g.fillStyle(0xfff6d0, .14); g.fillEllipse(f.x, GR + 4, 190, 30); } // círculo de luz bajo cada luchador
-  drawF(g, b, b.x, b.y); drawF(g, a, a.x, a.y); codeRain(g, a); codeRain(g, b);
+  // viñeta de manga: en golpes fuertes y KO el fondo se vuelve papel con líneas de velocidad hacia el impacto
+  if (S.sl > 0) {
+    g.fillStyle(0xfdf8ec, _mn(1, S.sl * 4)); g.fillRect(0, 0, W, H);
+    g.fillStyle(0x111111); for (let k = 0; k < 44; k++) { const a = k * .1428 + S.T, r = 70 + (k * 37) % 50; g.fillTriangle(S.slx + _mc(a) * r, S.sly + _ms(a) * r, S.slx + _mc(a - .03) * 900, S.sly + _ms(a - .03) * 900, S.slx + _mc(a + .03) * 900, S.sly + _ms(a + .03) * 900); }
+  }
+  drawF(g, b, b.x, b.y, 1.15); drawF(g, a, a.x, a.y, 1.15); codeRain(g, a); codeRain(g, b);
   for (const p of S.pr) drawP(g, p);
   for (let i = S.pa.length - 1; i >= 0; i--) { const q = S.pa[i]; q.l -= dt; q.vy += 900 * dt; q.x += q.vx * dt; q.y += q.vy * dt; if (q.l <= 0) S.pa.splice(i, 1); else { g.fillStyle(q.c); g.fillRect(q.x - 3, q.y - 3, 6, 6); } }
   for (let i = S.imp.length - 1; i >= 0; i--) { const q = S.imp[i], z = 14 * q.s * (q.l / .12 + .4); q.l -= dt || .016; if (q.l <= 0) { S.imp.splice(i, 1); continue; } g.fillStyle(0xffffff); g.fillRect(q.x - z * 1.6, q.y - 3, z * 3.2, 6); g.fillRect(q.x - 3, q.y - z * 1.6, 6, z * 3.2); g.fillStyle(0xffe066); g.fillRect(q.x - z / 2, q.y - z / 2, z, z); }
