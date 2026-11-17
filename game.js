@@ -284,7 +284,9 @@ function step(f, o, dt) {
   f.cd[0] -= dt; f.cd[1] -= dt;
   f.anim += dt;
   const live = S.ph === 'fight' && !f.ko && !f.win;
-  const I = live ? (f.cpu ? ai(f, o, dt) : hin(f)) : { b: [] };
+  // en versus, si el jugador 2 no toca nada por 3 s, la computadora toma su lugar
+  let I = live ? (f.cpu ? ai(f, o, dt) : hin(f)) : { b: [] };
+  if (live && !f.cpu && f.i) { f.idl = I.l || I.r || I.u || I.d || I.b.some(x => x) ? 0 : (f.idl || 0) + dt; if (f.idl > 3) I = ai(f, o, dt); }
   f.blk = 0; f.cr = 0;
   if (live && f.hs <= 0 && f.stun <= 0) {
     if (f.atk) {
