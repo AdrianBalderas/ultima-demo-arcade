@@ -397,9 +397,8 @@ function hype(n, f) {
   S.vT.setText('● EN VIVO · ' + S.vw.toLocaleString('es-MX') + ' VIENDO');
 }
 // Onomatopeyas de cómic en los golpes fuertes
-const JP = (c => (c.font = '20px sans-serif', c.measureText('ドン').width !== c.measureText('\u0fff\u0fff').width))(document.createElement('canvas').getContext('2d'));
 function ono(x, y) {
-  const t = S.sc.add.text(x + rnd(-30, 30), y + rnd(-20, 10), (JP ? ['ドン!', 'バキッ!', 'ズガン!', 'ドカッ!', 'ゴッ!'] : ['¡PAF!', '¡ZAS!', '¡PUM!', '¡CRAC!', '¡TOING!'])[_mr() * 5 | 0], { fontFamily: 'Impact, sans-serif', fontSize: '54px', color: '#ffffff', stroke: '#0a0a0a', strokeThickness: 7 }).setOrigin(.5).setDepth(16).setAngle(rnd(-18, 18)).setScale(.4);
+  const t = S.sc.add.text(x + rnd(-30, 30), y + rnd(-20, 10), ['¡PAF!', '¡ZAS!', '¡PUM!', '¡CRAC!', '¡TOING!'][_mr() * 5 | 0], { fontFamily: 'Impact, sans-serif', fontSize: '54px', color: '#ffffff', stroke: '#0a0a0a', strokeThickness: 7 }).setOrigin(.5).setDepth(16).setAngle(rnd(-18, 18)).setScale(.4);
   S.sc.tweens.add({ targets: t, scale: 1, duration: 90 });
   S.sc.tweens.add({ targets: t, alpha: 0, delay: 380, duration: 250, onComplete: () => t.destroy() });
 }
@@ -1076,7 +1075,6 @@ function initVs() {
   });
   if (S.np === 1) tx(W / 2, 30, HR[S.li] + (S.li === 3 ? ' (NACHO EN LA CÁMARA)' : ''), 16, '#ffffff');
   S.vsT = tx(W / 2, 290, 'VS', 64, '#ffffff');
-  if (JP && S.F[1].t > 6) for (const [x, y] of [[640, 220], [700, 330], [610, 420]]) tx(x, y, 'ゴゴゴ', 30, '#9b59d0').setAngle(-12);
   // Ficha de ronda impresa: tinta azul, roja y papel, sin el marco neón anterior.
   const g = S.bg;
   g.fillStyle(CY); g.fillRect(0, 0, 18, H); g.fillStyle(PK); g.fillRect(W - 18, 0, 18, H); g.fillStyle(CR); g.fillRect(28, 516, W - 56, 70); g.fillStyle(IV); g.fillRect(38, 526, W - 76, 50);
