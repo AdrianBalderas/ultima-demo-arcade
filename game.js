@@ -552,7 +552,11 @@ function drawF(g, f, X, Y, sc = 1) {
   const OC = f.fl > 0 ? W8 : f.mx > 0 ? 0x003b1a : 0x0a0a0a;
   const gone = (dx, dy) => f.mx > .25 && ((dx * 7 + dy * 13 + ((S.T * 14) | 0)) & 7) / 8 < (f.mx - .25) * 1.4;
   body((dx, dy, w, h) => { if (w * h > 2 && !gone(dx, dy)) { g.fillStyle(OC); g.fillRect(X + (fc > 0 ? dx - 1 : -dx - w - 1) * U, Y + (dy - 1) * U, (w + 2) * U, (h + 2) * U); } }, 1);
+  // luz de borde: una orilla clara en la espalda separa al luchador del fondo
+  if (!f.fl) body((dx, dy, w, h) => { if (w * h > 2 && !gone(dx, dy)) { g.fillStyle(0xfff3d6, .7); g.fillRect(X + (fc > 0 ? dx - .4 : -dx - w + .4) * U, Y + dy * U, w * U, h * U); } }, 1);
   body((dx, dy, w, h, c) => { if (gone(dx, dy)) return; g.fillStyle(f.mx > 0 ? lerpC(c, 0x00ff66, _mn(1, f.mx * 1.6)) : c); g.fillRect(X + (fc > 0 ? dx : -dx - w) * U, Y + dy * U, w * U, h * U); }, 0);
+  // volumen: luz arriba y sombra abajo sobre todo el cuerpo
+  if (!f.fl) body((dx, dy, w, h) => { if (!gone(dx, dy)) { g.fillStyle(dy > -14 ? 0x1d1430 : 0xffffff, dy > -14 ? .16 + (dy + 14) / 60 : .08); g.fillRect(X + (fc > 0 ? dx : -dx - w) * U, Y + dy * U, w * U, h * U); } }, 1);
   if (ps === 'punch') { g.fillStyle(W8, .45); g.fillRect(X + (fc > 0 ? 2 : -11) * U, Y - 20 * U, 9 * U, 2 * U); }
   if (ps === 'cast') { g.fillStyle(T.col, .5); g.fillCircle(X + fc * 12 * U, Y - 19 * U, 4 * U); }
   if (f.stun > 0) for (let k = 0; k < 3; k++) { g.fillStyle(0xffe066); g.fillRect(X + _mc(S.T * 6 + k * 2.1) * 22 * sc - 3, Y - 175 * sc + _ms(S.T * 6 + k * 2.1) * 6, 6, 6); }
