@@ -472,6 +472,8 @@ function inked(L, cut = -14) {
   for (const [dx, dy, w, h, c] of L) RL.push(dx, dy, w, h, V(lerpC(c, dy > cut ? 0x1d1430 : 0xfff3d6, dy > cut ? .1 : .08)));
   return RL;
 }
+// fillStyle + fillRect en una sola llamada (ahorra bytes)
+function FR(g, c, x, y, w, h) { g.fillStyle(c); g.fillRect(x, y, w, h); }
 function drawF(g, f, X, Y, sc = 1) {
   if (f.t === 8) return drawClock(g, f, X, Y, sc);
   const U = 5 * sc, fc = f.face, T = TEAMS[f.t], L = f.look, t = f.t;
@@ -603,8 +605,8 @@ function drawF(g, f, X, Y, sc = 1) {
   paint(RL, fc, X, Y, U, gone, M ? S.T * 14 | 0 : '');
   if (ps === 'punch') { g.fillStyle(W8, .45); g.fillRect(X + (fc > 0 ? 2 : -11) * U, Y - 20 * U, 9 * U, 2 * U); }
   if (ps === 'cast') { g.fillStyle(T.col, .5); g.fillCircle(X + fc * 12 * U, Y - 19 * U, 4 * U); }
-  if (f.stun > 0) for (let k = 0; k < 3; k++) { g.fillStyle(0xffe066); g.fillRect(X + _mc(S.T * 6 + k * 2.1) * 22 * sc - 3, Y - 175 * sc + _ms(S.T * 6 + k * 2.1) * 6, 6, 6); }
-  if (f.inv > 0) { g.fillStyle(0xc39bd3); g.fillRect(X - 3, Y - 190 * sc + _ms(S.T * 8) * 4, 6, 10); }
+  if (f.stun > 0) for (let k = 0; k < 3; k++) { FR(g, 0xffe066, X + _mc(S.T * 6 + k * 2.1) * 22 * sc - 3, Y - 175 * sc + _ms(S.T * 6 + k * 2.1) * 6, 6, 6); }
+  if (f.inv > 0) { FR(g, 0xc39bd3, X - 3, Y - 190 * sc + _ms(S.T * 8) * 4, 6, 10); }
 }
 
 // ---------- Efecto "se vuelve código": el luchador vencido se deshace en una lluvia de 0 y 1 ----------
@@ -643,8 +645,8 @@ function drawClock(g, f, X, Y, sc) {
   hand(_mR(f.anim * 6 / .5236) * .5236, 7); hand(_mR(f.anim * .6 / 1.5708) * 1.5708, 4);
   L.push([-6, cy - 5, 4, 1, 0x111111], [2, cy - 5, 4, 1, 0x111111], [-1, cy, 2, 2, 0xff3b3b]);
   paint(inked(L), f.face, X, Y, 5 * sc);
-  if (ps === 'punch' || ps === 'cast') { g.fillStyle(0xff3b3b); g.fillRect(X + (f.face > 0 ? 50 * sc : -100 * sc), Y - 92 * sc, 50 * sc, 12 * sc); }
-  if (f.stun > 0) { g.fillStyle(0xffe066); g.fillRect(X + _mc(S.T * 6) * 30 - 3, Y - 170 * sc, 6, 6); }
+  if (ps === 'punch' || ps === 'cast') { FR(g, 0xff3b3b, X + (f.face > 0 ? 50 * sc : -100 * sc), Y - 92 * sc, 50 * sc, 12 * sc); }
+  if (f.stun > 0) { FR(g, 0xffe066, X + _mc(S.T * 6) * 30 - 3, Y - 170 * sc, 6, 6); }
 }
 
 
@@ -693,25 +695,25 @@ function banana(g, x, y, r, w) {
 function drawP(g, p) {
   const x = p.x, y = p.y, d = p.vx >= 0 ? 1 : -1;
   switch (p.k) {
-    case 'fire': g.fillStyle(0xff5b1a); g.fillRect(x - 10, y - 10, 20, 20); g.fillStyle(0xffe066); g.fillRect(x - 5, y - 5, 10, 10); if (_mr() < .5) spark(x - d * 10, y, 0xff9b3d, 1); break;
-    case 'arrow': g.fillStyle(0x2ecc71); g.fillRect(x - 14, y - 3, 22, 6); g.fillTriangle(x + d * 16, y, x + d * 4, y - 10, x + d * 4, y + 10); break;
-    case 'scan': g.fillStyle(0x66ddff, .8); g.fillRect(x - 30, y - 4, 60, 8); g.fillStyle(0xffffff); g.fillRect(x - 30, y - 1, 60, 2); break;
+    case 'fire': FR(g, 0xff5b1a, x - 10, y - 10, 20, 20); FR(g, 0xffe066, x - 5, y - 5, 10, 10); if (_mr() < .5) spark(x - d * 10, y, 0xff9b3d, 1); break;
+    case 'arrow': FR(g, 0x2ecc71, x - 14, y - 3, 22, 6); g.fillTriangle(x + d * 16, y, x + d * 4, y - 10, x + d * 4, y + 10); break;
+    case 'scan': g.fillStyle(0x66ddff, .8); g.fillRect(x - 30, y - 4, 60, 8); FR(g, 0xffffff, x - 30, y - 1, 60, 2); break;
     case 'q': case 'quiz':
-      g.fillStyle(p.k === 'q' ? 0x8e44ad : 0xffffff); g.fillRect(x - 12, y - 14, 24, 28);
-      g.fillStyle(p.k === 'q' ? 0xffffff : 0x8e44ad); g.fillRect(x - 5, y - 9, 10, 3); g.fillRect(x + 3, y - 9, 3, 8); g.fillRect(x - 2, y - 2, 5, 3); g.fillRect(x - 2, y + 5, 4, 4); break;
-    case 'red': g.fillStyle(0x000000); g.fillRect(x - 20, y - 7, 40, 14); g.lineStyle(2, 0xffffff); g.strokeRect(x - 20, y - 7, 40, 14); break;
-    case 'book': g.fillStyle(0x8e5a2f); g.fillRect(x - 11, y - 8, 22, 16); g.fillStyle(0xffffff); g.fillRect(x - 9, y - 6, 18, 2); g.fillStyle(0xe84393); g.fillRect(x - 1, y - 8, 2, 16); break;
-    case 'buddy': { const s = _mR(_ms(S.T * 20) * 2); g.fillStyle(0x9c7cf6); g.fillRect(x - 10, y - 14, 20, 14); g.fillRect(x + d * 6 - 4, y - 22, 10, 10); g.fillStyle(0xffffff); g.fillRect(x + d * 8, y - 19, 3, 3); g.fillStyle(0x2d3047); g.fillRect(x - 8 + s, y, 5, 6); g.fillRect(x + 3 - s, y, 5, 6); break; }
+      FR(g, p.k === 'q' ? 0x8e44ad : 0xffffff, x - 12, y - 14, 24, 28);
+      FR(g, p.k === 'q' ? 0xffffff : 0x8e44ad, x - 5, y - 9, 10, 3); g.fillRect(x + 3, y - 9, 3, 8); g.fillRect(x - 2, y - 2, 5, 3); g.fillRect(x - 2, y + 5, 4, 4); break;
+    case 'red': FR(g, 0x000000, x - 20, y - 7, 40, 14); g.lineStyle(2, 0xffffff); g.strokeRect(x - 20, y - 7, 40, 14); break;
+    case 'book': FR(g, 0x8e5a2f, x - 11, y - 8, 22, 16); FR(g, 0xffffff, x - 9, y - 6, 18, 2); FR(g, 0xe84393, x - 1, y - 8, 2, 16); break;
+    case 'buddy': { const s = _mR(_ms(S.T * 20) * 2); FR(g, 0x9c7cf6, x - 10, y - 14, 20, 14); g.fillRect(x + d * 6 - 4, y - 22, 10, 10); FR(g, 0xffffff, x + d * 8, y - 19, 3, 3); FR(g, 0x2d3047, x - 8 + s, y, 5, 6); g.fillRect(x + 3 - s, y, 5, 6); break; }
     case 'heart': g.fillStyle(0xff3b8d); g.fillCircle(x - 8, y - 6, 11); g.fillCircle(x + 8, y - 6, 11); g.fillTriangle(x - 18, y - 2, x + 18, y - 2, x, y + 18); break;
     case 'wave': g.lineStyle(4, 0xf5c400); for (let k = 0; k < 3; k++) { g.beginPath(); g.arc(x - d * 20, y, 12 + k * 10, d > 0 ? -.8 : _mP - .8, d > 0 ? .8 : _mP + .8, false); g.strokePath(); } break;
-    case 'rock': g.fillStyle(0x7f8c8d); g.fillRect(x - 10, y - 10, 20, 20); g.fillStyle(0x4d5656); g.fillRect(x - 10, y + 4, 20, 6); break;
-    case 'pillar': g.fillStyle(0xe8e0d0); g.fillRect(x - 18, y - 40, 36, 80); g.fillStyle(0xbdb5a3); g.fillRect(x - 10, y - 34, 4, 70); g.fillRect(x + 6, y - 34, 4, 70); g.fillRect(x - 22, y - 44, 44, 8); break;
-    case 'clip': g.fillStyle(0x8d6e4f); g.fillRect(x - 10, y - 13, 20, 26); g.fillStyle(0xffffff); g.fillRect(x - 7, y - 8, 14, 18); g.fillStyle(0x888888); g.fillRect(x - 4, y - 15, 8, 4); break;
+    case 'rock': FR(g, 0x7f8c8d, x - 10, y - 10, 20, 20); FR(g, 0x4d5656, x - 10, y + 4, 20, 6); break;
+    case 'pillar': FR(g, 0xe8e0d0, x - 18, y - 40, 36, 80); FR(g, 0xbdb5a3, x - 10, y - 34, 4, 70); g.fillRect(x + 6, y - 34, 4, 70); g.fillRect(x - 22, y - 44, 44, 8); break;
+    case 'clip': FR(g, 0x8d6e4f, x - 10, y - 13, 20, 26); FR(g, 0xffffff, x - 7, y - 8, 14, 18); FR(g, 0x888888, x - 4, y - 15, 8, 4); break;
     case 'clock': g.fillStyle(0xffffff); g.fillCircle(x, y, 13); g.lineStyle(3, 0x111111); g.strokeCircle(x, y, 13); g.lineBetween(x, y, x + _mc(S.T * 12) * 9, y + _ms(S.T * 12) * 9); break;
-    case 'robot': g.fillStyle(0x95a5a6); g.fillRect(x - 30, y - 30, 60, 60); g.fillStyle(0xe1ff00); g.fillRect(x - 18, y - 16, 10, 8); g.fillRect(x + 8, y - 16, 10, 8); g.fillStyle(0x34495e); g.fillRect(x - 15, y + 8, 30, 6); g.fillRect(x - 3, y - 42, 6, 12); break;
-    case 'peel': g.fillStyle(0xffe135); g.fillRect(x - 14, y - 2, 28, 6); g.fillRect(x - 14, y - 8, 6, 6); g.fillRect(x + 8, y - 8, 6, 6); g.fillRect(x - 3, y - 10, 6, 8); g.fillStyle(0x6d4c2f); g.fillRect(x - 2, y - 13, 4, 3); break;
-    case 'ban': g.fillStyle(0xffe135); g.fillRect(x - 10, y - 2, 20, 6); g.fillRect(x - 14, y - 7, 5, 6); g.fillRect(x + 9, y - 7, 5, 6); g.fillStyle(0x6d4c2f); g.fillRect(x - 15, y - 9, 3, 3); g.fillRect(x + 12, y - 9, 3, 3); break;
-    case 'hand': g.fillStyle(0x111111); g.fillRect(x - 16, y - 3, 32, 6); g.fillTriangle(x + d * 22, y, x + d * 10, y - 8, x + d * 10, y + 8); break;
+    case 'robot': FR(g, 0x95a5a6, x - 30, y - 30, 60, 60); FR(g, 0xe1ff00, x - 18, y - 16, 10, 8); g.fillRect(x + 8, y - 16, 10, 8); FR(g, 0x34495e, x - 15, y + 8, 30, 6); g.fillRect(x - 3, y - 42, 6, 12); break;
+    case 'peel': FR(g, 0xffe135, x - 14, y - 2, 28, 6); g.fillRect(x - 14, y - 8, 6, 6); g.fillRect(x + 8, y - 8, 6, 6); g.fillRect(x - 3, y - 10, 6, 8); FR(g, 0x6d4c2f, x - 2, y - 13, 4, 3); break;
+    case 'ban': FR(g, 0xffe135, x - 10, y - 2, 20, 6); g.fillRect(x - 14, y - 7, 5, 6); g.fillRect(x + 9, y - 7, 5, 6); FR(g, 0x6d4c2f, x - 15, y - 9, 3, 3); g.fillRect(x + 12, y - 9, 3, 3); break;
+    case 'hand': FR(g, 0x111111, x - 16, y - 3, 32, 6); g.fillTriangle(x + d * 22, y, x + d * 10, y - 8, x + d * 10, y + 8); break;
   }
 }
 
@@ -722,7 +724,7 @@ function sky(g, a, b) {
   S.hz = b;
   for (let i = 0; i < 8; i++) {
     const y = i * 65;
-    g.fillStyle(lerpC(a, b, i / 7)); g.fillRect(0, y, W, 65);
+    FR(g, lerpC(a, b, i / 7), 0, y, W, 65);
     if (i < 7) { g.fillStyle(lerpC(a, b, (i + 1) / 7)); for (let x = 0; x < W; x += 8) { g.fillRect(x, y + 57, 4, 4); g.fillRect(x + 4, y + 61, 4, 4); } }
   }
 }
@@ -733,20 +735,20 @@ function city(g, sd, c, y0, mn, mx, win) {
   seed = sd; g.fillStyle(S.hz, .3); g.fillRect(0, 0, W, y0);
   for (let x = -10; x < W;) {
     const w = 30 + rr() * 45, h = mn + rr() * (mx - mn);
-    g.fillStyle(c); g.fillRect(x, y0 - h, w, h); g.fillStyle(lerpC(c, 0xffffff, .3)); g.fillRect(x, y0 - h, w, 3); g.fillStyle(lerpC(c, 0, .25)); g.fillRect(x + w - 7, y0 - h, 7, h);
-    if (win) for (let yy = y0 - h + 8; yy < y0 - 8; yy += 14) for (let xx = x + 6; xx < x + w - 8; xx += 12) if (rr() < .55) { g.fillStyle(win); g.fillRect(xx, yy, 5, 6); }
+    FR(g, c, x, y0 - h, w, h); FR(g, lerpC(c, 0xffffff, .3), x, y0 - h, w, 3); FR(g, lerpC(c, 0, .25), x + w - 7, y0 - h, 7, h);
+    if (win) for (let yy = y0 - h + 8; yy < y0 - 8; yy += 14) for (let xx = x + 6; xx < x + w - 8; xx += 12) if (rr() < .55) { FR(g, win, xx, yy, 5, 6); }
     x += w + 4;
   }
 }
 function ground(g, c, line) {
-  for (let i = 0; i < 4; i++) { g.fillStyle(lerpC(c, 0xffffff, i * .05)); g.fillRect(0, GR + i * 20, W, 20); }
+  for (let i = 0; i < 4; i++) { FR(g, lerpC(c, 0xffffff, i * .05), 0, GR + i * 20, W, 20); }
   g.lineStyle(2, lerpC(c, 0, .4), .7);
   for (let k = -12; k <= 12; k++) g.lineBetween(400 + k * 34, GR, 400 + k * 95, H);
   for (const y of [536, 556, 584]) g.lineBetween(0, y, W, y);
-  g.fillStyle(line); g.fillRect(0, GR, W, 4); g.fillStyle(0xffffff, .3); g.fillRect(0, GR + 4, W, 2);
+  FR(g, line, 0, GR, W, 4); g.fillStyle(0xffffff, .3); g.fillRect(0, GR + 4, W, 2);
 }
 function snow(g, pk) { g.fillStyle(0xffffff); for (let i = 0; i < pk.length; i += 2) g.fillTriangle(pk[i], pk[i + 1], pk[i] - 26, pk[i + 1] + 28, pk[i] + 26, pk[i + 1] + 28); }
-function tower(g, x, c, win) { g.fillStyle(c); g.fillRect(x, 150, 40, 290); g.fillTriangle(x, 150, x + 40, 150, x + 20, 115); g.fillStyle(win); for (let y = 160; y < 430; y += 12) g.fillRect(x + 4, y, 32, 3); }
+function tower(g, x, c, win) { FR(g, c, x, 150, 40, 290); g.fillTriangle(x, 150, x + 40, 150, x + 20, 115); g.fillStyle(win); for (let y = 160; y < 430; y += 12) g.fillRect(x + 4, y, 32, 3); }
 
 
 function legacyDrawStage(g, id) { return;
@@ -761,56 +763,56 @@ function legacyDrawStage(g, id) { return;
     g.fillStyle(0xf5f3ce); g.fillCircle(680, 90, 30);
     mtn(g, AND, 0x1e2a44); g.fillStyle(0xcfd8e8); for (let i = 0; i < PK.length; i += 2) g.fillTriangle(PK[i], PK[i + 1], PK[i] - 24, PK[i + 1] + 26, PK[i] + 24, PK[i + 1] + 26);
     city(g, 11, 0x17202a, 445, 40, 110, 0xf7dc6f); tower(g, 640, 0x1b2631, 0xf7dc6f);
-    for (let k = 0; k < 6; k++) { g.fillStyle(0x4e342e); g.fillRect(280 + k * 12, 440 - (k + 1) * 42, 240 - k * 24, 42); g.fillStyle(0x27ae60); g.fillRect(280 + k * 12, 440 - (k + 1) * 42, 240 - k * 24, 6); g.fillStyle(0xffd27f); for (let x = 290 + k * 12; x < 510 - k * 12; x += 18) g.fillRect(x, 440 - (k + 1) * 42 + 14, 8, 14); }
+    for (let k = 0; k < 6; k++) { FR(g, 0x4e342e, 280 + k * 12, 440 - (k + 1) * 42, 240 - k * 24, 42); FR(g, 0x27ae60, 280 + k * 12, 440 - (k + 1) * 42, 240 - k * 24, 6); g.fillStyle(0xffd27f); for (let x = 290 + k * 12; x < 510 - k * 12; x += 18) g.fillRect(x, 440 - (k + 1) * 42 + 14, 8, 14); }
     ground(g, 0x2c2c34, 0x4a4a55);
   } else if (id === 2) {
     sky(g, 0x6ec6ff, 0xd6f0ff); g.fillStyle(0xfff3b0); g.fillCircle(120, 100, 40);
     city(g, 5, 0x8e9aaf, 445, 60, 150, 0xd6eaf8);
     g.fillStyle(0xf2f0e6); g.fillPoints(P([378, 470, 422, 470, 410, 170, 400, 135, 390, 170]), true);
-    g.fillStyle(0xd5d2c4); g.fillPoints(P([400, 470, 422, 470, 410, 170, 400, 135]), true); g.fillStyle(0x333333); g.fillRect(397, 160, 6, 6);
+    g.fillStyle(0xd5d2c4); g.fillPoints(P([400, 470, 422, 470, 410, 170, 400, 135]), true); FR(g, 0x333333, 397, 160, 6, 6);
     ground(g, 0x55585e, 0x7a7d84); g.fillStyle(0xffffff); for (let x = 0; x < W; x += 80) g.fillRect(x, 560, 40, 4);
-    g.fillStyle(0x6d4c2f); g.fillRect(28, 415, 12, 105); g.fillRect(220, 415, 12, 105);
+    FR(g, 0x6d4c2f, 28, 415, 12, 105); g.fillRect(220, 415, 12, 105);
     g.fillStyle(0x8d6e4f); for (let y = 425; y < 515; y += 18) g.fillRect(40, y, 180, 7);
     g.lineStyle(7, 0x8d6e4f); g.lineBetween(42, 510, 220, 428);
   } else if (id === 3) {
     sky(g, 0xff9a8b, 0xffd59e); city(g, 9, 0x6c7a89, 445, 70, 170, 0xa9cce3);
-    g.fillStyle(0x9e9e9e); g.fillRect(365, 440, 70, 40); g.fillStyle(0xe0d6b8); g.fillRect(388, 175, 24, 265); g.fillRect(380, 168, 40, 10);
+    FR(g, 0x9e9e9e, 365, 440, 70, 40); FR(g, 0xe0d6b8, 388, 175, 24, 265); g.fillRect(380, 168, 40, 10);
     g.fillStyle(0xc9bd9c); for (let y = 200; y < 430; y += 40) g.fillRect(388, y, 24, 4);
-    g.fillStyle(0xffc300); g.fillRect(395, 122, 10, 46); g.fillTriangle(395, 132, 368, 108, 395, 152); g.fillTriangle(405, 132, 432, 108, 405, 152); g.fillCircle(400, 116, 7);
+    FR(g, 0xffc300, 395, 122, 10, 46); g.fillTriangle(395, 132, 368, 108, 395, 152); g.fillTriangle(405, 132, 432, 108, 405, 152); g.fillCircle(400, 116, 7);
     ground(g, 0xb08968, 0xd4b896); g.fillStyle(0x9c7656); for (let x = 0; x < W; x += 50) g.fillRect(x, GR, 2, H - GR);
   } else if (id === 4) {
     sky(g, 0x7f8c99, 0xc4ccd4); g.fillStyle(0xdfe4ea); for (const [x, y] of [[150, 80], [190, 70], [560, 110], [600, 95], [640, 110]]) g.fillCircle(x, y, 30);
     mtn(g, [0, 440, 120, 260, 260, 120, 330, 108, 420, 240, 560, 330, 800, 360, 800, 440], 0x2e5e3e);
     mtn(g, [0, 440, 160, 320, 300, 230, 420, 330, 560, 400, 0, 440], 0x3d7a50);
-    g.fillStyle(0xffffff); g.fillRect(312, 92, 26, 18); g.fillRect(330, 78, 6, 16); g.fillStyle(0xc0392b); g.fillTriangle(310, 92, 340, 92, 325, 82);
+    FR(g, 0xffffff, 312, 92, 26, 18); g.fillRect(330, 78, 6, 16); g.fillStyle(0xc0392b); g.fillTriangle(310, 92, 340, 92, 325, 82);
     city(g, 13, 0x9c4a2f, 445, 50, 120, 0xf3d9a4); ground(g, 0x2f3640, 0x57606f);
     g.fillStyle(0x57606f, .6); for (let x = 20; x < W; x += 90) g.fillRect(x, 540 + (x % 3) * 12, 50, 3);
   } else if (id === 5) {
     sky(g, 0x4fb3ff, 0xbfe6ff); mtn(g, [0, 330, 150, 210, 300, 180, 450, 200, 600, 170, 800, 240, 800, 440, 0, 440], 0x3f7d3a);
     g.lineStyle(3, 0x2f5f2c); g.lineBetween(150, 210, 210, 330); g.lineBetween(450, 200, 400, 340); g.lineBetween(600, 170, 660, 320);
-    g.fillStyle(0x7f8c8d); g.fillRect(560, 185, 46, 260); g.fillRect(620, 175, 46, 270);
+    FR(g, 0x7f8c8d, 560, 185, 46, 260); g.fillRect(620, 175, 46, 270);
     g.fillStyle(0xbdc3c7); for (let y = 195; y < 440; y += 14) { g.fillRect(565, y, 36, 4); g.fillRect(625, y - 6, 36, 4); }
     city(g, 17, 0xb07d62, 445, 30, 70, 0xfdebd0);
-    for (const x of [90, 300, 740]) { g.fillStyle(0x5d4037); g.fillRect(x - 4, GR - 70, 8, 70); g.fillStyle(0xffd400); g.fillCircle(x, GR - 85, 30); g.fillStyle(0xf1c40f); g.fillCircle(x - 20, GR - 72, 18); g.fillCircle(x + 22, GR - 74, 18); }
+    for (const x of [90, 300, 740]) { FR(g, 0x5d4037, x - 4, GR - 70, 8, 70); g.fillStyle(0xffd400); g.fillCircle(x, GR - 85, 30); g.fillStyle(0xf1c40f); g.fillCircle(x - 20, GR - 72, 18); g.fillCircle(x + 22, GR - 74, 18); }
     ground(g, 0xcaa472, 0xe0c393);
   } else if (id === 6) {
-    g.fillStyle(0x15180a); g.fillRect(0, 0, W, H); g.fillStyle(0x1f2410); for (let x = 0; x < W; x += 100) g.fillRect(x, 0, 50, GR);
+    FR(g, 0x15180a, 0, 0, W, H); g.fillStyle(0x1f2410); for (let x = 0; x < W; x += 100) g.fillRect(x, 0, 50, GR);
     banana(g, 400, 150, 100, 30);
-    g.fillStyle(0x0b0d05); g.fillRect(590, 110, 170, 70); g.lineStyle(3, 0xe1ff00); g.strokeRect(590, 110, 170, 70);
-    g.fillStyle(0x3b3f1e); for (const x of [60, 560]) { g.fillRect(x, 440, 180, 14); g.fillRect(x + 10, 454, 8, 66); g.fillRect(x + 160, 454, 8, 66); g.fillStyle(0x95a5a6); g.fillRect(x + 30, 424, 40, 16); g.fillRect(x + 110, 424, 40, 16); g.fillStyle(0x3b3f1e); }
+    FR(g, 0x0b0d05, 590, 110, 170, 70); g.lineStyle(3, 0xe1ff00); g.strokeRect(590, 110, 170, 70);
+    g.fillStyle(0x3b3f1e); for (const x of [60, 560]) { g.fillRect(x, 440, 180, 14); g.fillRect(x + 10, 454, 8, 66); g.fillRect(x + 160, 454, 8, 66); FR(g, 0x95a5a6, x + 30, 424, 40, 16); g.fillRect(x + 110, 424, 40, 16); g.fillStyle(0x3b3f1e); }
     ground(g, 0x2a2d12, 0xe1ff00);
   } else if (id === 8) {
     sky(g, 0xff9a76, 0xffe1c6); g.fillStyle(0xfff0b3); g.fillCircle(640, 300, 46);
     mtn(g, [520, 400, 640, 300, 800, 330, 800, 400], 0x5b6b4a);
-    g.fillStyle(0x2c5f7c); g.fillRect(0, 380, W, 140); g.fillStyle(0x4f86a6); for (let x = 0; x < W; x += 60) g.fillRect(x + (x % 120 ? 20 : 0), 420 + (x % 7) * 8, 34, 3);
+    FR(g, 0x2c5f7c, 0, 380, W, 140); g.fillStyle(0x4f86a6); for (let x = 0; x < W; x += 60) g.fillRect(x + (x % 120 ? 20 : 0), 420 + (x % 7) * 8, 34, 3);
     const RC = 0xc0362c; g.lineStyle(3, RC);
     for (let i = 0; i < 40; i++) { const f = u => u < 230 ? 120 + (230 - u) * .55 : u > 570 ? 120 + (u - 570) * .55 : 120 + 180 * (1 - Math.pow((u - 400) / 170, 2)); const a = i * 20, b = a + 20; g.lineBetween(a, f(a), b, f(b)); if (i % 2) g.lineBetween(a, f(a), a, 330); }
-    g.fillStyle(RC); g.fillRect(0, 330, W, 14);
+    FR(g, RC, 0, 330, W, 14);
     for (const x of [230, 570]) { g.fillRect(x - 12, 110, 24, 290); for (const y of [140, 210, 280]) g.fillRect(x - 18, y, 36, 8); }
     g.fillStyle(0xffffff, .35); for (const [x, y] of [[150, 360], [330, 372], [520, 356], [700, 368]]) g.fillEllipse(x, y, 260, 34);
     ground(g, 0x6b5b4b, 0x8d7b68);
   } else {
-    g.fillStyle(0x14040a); g.fillRect(0, 0, W, H); g.lineStyle(1, 0xff3b3b, .15);
+    FR(g, 0x14040a, 0, 0, W, H); g.lineStyle(1, 0xff3b3b, .15);
     for (let x = 0; x < W; x += 40) g.lineBetween(x, 0, x, GR); for (let y = 0; y < GR; y += 40) g.lineBetween(0, y, W, y);
     g.lineStyle(6, 0x5a0f1a); g.strokeCircle(400, 230, 170);
     g.fillStyle(0x5a0f1a); for (let k = 0; k < 12; k++) g.fillRect(400 + _mc(k * .5236) * 150 - 5, 230 + _ms(k * .5236) * 150 - 5, 10, 10);
@@ -848,40 +850,23 @@ function cyberStage(g, id) {
 */
 // ---------- Afiche de madrugada: una sede, una tinta, un símbolo ----------
 /* Dirección anterior: mismo skyline para todas las sedes.
-function legacyPaperStage(g, id) {
-  const C = [0x326b84, 0x3e8871, 0xc94f5a, 0xd67c38, 0x518b79, 0xc48b32, 0xb3a02b, 0xb74350, 0x78629a][id] || 0xc94f5a, I = 0x201a20, P = 0xf2e3bf, A = lerpC(C, P, .35), sx = id & 1 ? 608 : 192;
-  g.fillStyle(P); g.fillRect(0, 0, W, H); g.fillStyle(C, .16); for (let x = 18; x < W; x += 34) for (let y = 105 + (x % 3) * 7; y < GR; y += 27) g.fillRect(x, y, 5, 5);
-  g.fillStyle(I); g.fillRect(0, 0, W, 88); g.fillStyle(C); g.fillRect(0, 84, W, 4); g.fillStyle(C, .32); g.fillCircle(sx, 188, 116); g.fillStyle(A, .75); g.fillCircle(sx + 8, 180, 93);
-  g.fillStyle(I, .88); for (let x = -20; x < W; x += 70) { const h = 42 + (x + id * 31) % 105; g.fillRect(x, GR - h, 56, h); }
-  g.fillStyle(I); g.lineStyle(7, I);
-  if (id === 0) { g.fillTriangle(0, 350, 168, 128, 338, 350); g.fillTriangle(210, 350, 390, 176, 575, 350); g.lineBetween(55, 285, 325, 226); }
-  else if (id === 1) { g.fillRect(574, 132, 110, 212); g.fillStyle(C); g.fillRect(596, 156, 66, 16); g.fillRect(596, 202, 66, 16); g.fillRect(596, 248, 66, 16); }
-  else if (id === 2) { g.fillCircle(178, 222, 106); g.fillStyle(P); g.fillCircle(178, 222, 68); g.fillStyle(I); g.fillCircle(178, 222, 19); }
-  else if (id === 3) { g.fillRect(595, 150, 50, 198); g.fillTriangle(570, 150, 620, 96, 670, 150); g.fillStyle(C); g.fillRect(605, 174, 30, 122); }
-  else if (id === 4) { g.fillTriangle(42, 350, 196, 106, 352, 350); g.lineStyle(6, C); g.lineBetween(94, 298, 298, 208); g.lineBetween(94, 298, 94, 244); g.lineBetween(298, 208, 298, 244); }
-  else if (id === 5) { g.fillTriangle(462, 350, 620, 104, 778, 350); g.fillStyle(C); g.fillTriangle(520, 304, 620, 146, 720, 304); }
-  else if (id === 6) { g.fillRect(536, 128, 184, 178); g.fillStyle(P); g.fillRect(556, 152, 144, 26); g.fillRect(556, 202, 144, 26); banana(g, 244, 236, 74, 18); }
-  else if (id === 7) { g.fillCircle(400, 220, 112); g.fillStyle(P); g.fillCircle(400, 220, 82); g.lineStyle(9, I); g.lineBetween(400, 220, 400, 150); g.lineBetween(400, 220, 462, 242); }
-  else { g.lineStyle(11, I); g.lineBetween(488, 326, 640, 128); g.lineBetween(640, 128, 792, 326); g.lineStyle(5, C); g.lineBetween(488, 326, 792, 326); }
-  g.fillStyle(I); g.fillRect(0, GR, W, H - GR); g.fillStyle(C); g.fillRect(0, GR, W, 7); for (let x = -70; x < W; x += 88) { g.fillStyle(P, .1); g.fillTriangle(x, GR + 10, x + 34, GR + 10, x + 90, H); }
-}
 */
 // Trama de manga impreso: puntos que se agrandan hacia arriba del cielo
 function trama(g) { g.fillStyle(0, .1); for (let y = 0; y < GR; y += 8) for (let x = (y & 8) / 2; x < W; x += 8) g.fillCircle(x, y, 2.4 * (1 - y / GR)); }
 function drawStage(g, id) {
   const C = [0x326b84, 0x3e8871, 0xc94f5a, 0xd67c38, 0x40845b, 0x248aaa, 0xd0a52e, 0xc84c50, 0xd06d3f][id] || 0xc94f5a, S = [0xa8d9ef, 0xb9e4ee, 0xf4d0cf, 0xffd46d, 0x9fd1bd, 0x9bd9e9, 0xffdf7c, 0xf4c3b8, 0xa8d5ed][id] || 0xf2e3bf, F = [0x496f5b, 0x5f746d, 0x627987, 0x9b7042, 0x487159, 0x3d7d69, 0x79652c, 0x6c4d50, 0x397b9e][id] || 0x201a20, I = 0x201a20, L = lerpC(S, 0xffffff, .5), sun = id & 1 ? 626 : 164;
-  g.fillStyle(S); g.fillRect(0, 0, W, H); g.fillStyle(L, .78); g.fillCircle(sun, 152, 58); g.fillStyle(0xffffff, .32); for (let k = 0; k < 3; k++) g.fillEllipse(48 + (k * 247 + id * 61) % 690, 105 + (k & 1) * 46, 118, 24);
-  g.fillStyle(I); g.fillRect(0, 0, W, 84); g.fillStyle(C); g.fillRect(0, 80, W, 4);
-  if (id === 0) { g.fillStyle(0x668cab); g.fillTriangle(0, 400, 180, 122, 365, 400); g.fillTriangle(250, 400, 485, 164, 720, 400); g.fillStyle(0xf5f6f1); g.fillTriangle(132, 195, 180, 122, 228, 195); g.fillTriangle(430, 220, 485, 164, 540, 220); g.lineStyle(4, 0xc84c50); g.lineBetween(42, 255, 412, 184); g.fillStyle(0xc84c50); g.fillRect(214, 196, 38, 22); }
-  else if (id === 1) { g.fillStyle(0x58727a); g.fillRect(562, 110, 108, 292); g.fillStyle(0xd0f1ed); for (let y = 132; y < 380; y += 30) g.fillRect(580, y, 72, 11); g.fillStyle(0x5d9c82); g.fillRect(0, 350, W, 62); g.fillStyle(0x2b5554); g.fillRect(90, 312, 220, 42); }
-  else if (id === 2) { g.fillStyle(0x83bfda); g.fillRect(0, 336, W, 116); g.fillStyle(0xffffff, .58); for (let y = 358; y < 440; y += 24) g.fillRect(0, y, W, 5); g.fillStyle(0xefede3); g.fillTriangle(355, 412, 432, 412, 408, 104); g.fillStyle(0xcfcfc5); g.fillTriangle(408, 104, 432, 412, 408, 412); g.fillStyle(0xb9614f); g.fillRect(0, 428, W, 24); }
-  else if (id === 3) { g.fillStyle(0xffd46d); g.fillRect(0, 84, W, GR - 84); g.fillStyle(0xffe676, .88); g.fillCircle(612, 158, 86); g.fillStyle(0xffffff, .28); g.fillEllipse(144, 152, 154, 22); g.fillEllipse(272, 194, 108, 18); g.fillStyle(0xc94f5a); g.fillTriangle(0, 466, 402, 286, 800, 466); g.lineStyle(4, 0xf7dd7c, .7); for (let x = 38; x < W; x += 108) g.lineBetween(402, 300, x, 458); g.fillStyle(0x7b8580); for (let x = 20; x < W; x += 64) g.fillRect(x, 304 + (x % 3) * 11, 42, 102); g.fillStyle(0xb66742); g.fillRect(480, 382, 98, 15); g.fillRect(490, 368, 78, 14); g.fillStyle(0xf8efc9); g.fillRect(518, 174, 22, 194); g.fillRect(506, 204, 46, 14); g.fillStyle(0xf3c94d); g.fillCircle(529, 108, 8); g.fillTriangle(529, 116, 518, 150, 540, 150); g.fillStyle(0xfff1a8); g.fillTriangle(524, 122, 474, 108, 521, 145); g.fillTriangle(534, 122, 584, 108, 537, 145); g.fillStyle(0x263b45); g.fillRect(45, 334, 250, 64); g.fillStyle(0xc94f5a); g.fillRect(55, 343, 230, 41); g.fillStyle(0xf8efc9); for (let x = 69; x < 268; x += 32) g.fillRect(x, 350, 19, 13); g.fillStyle(0x263b45); g.fillCircle(85, 394, 10); g.fillCircle(253, 394, 10); g.fillStyle(0xc94f5a); g.fillCircle(72, 312, 21); g.lineStyle(4, 0xf8efc9); g.lineBetween(59, 321, 59, 304); g.lineBetween(59, 304, 72, 318); g.lineBetween(72, 318, 85, 304); g.lineBetween(85, 304, 85, 321); }
-  else if (id === 4) { g.fillStyle(0x4d8961); g.fillTriangle(0, 400, 184, 104, 370, 400); g.fillTriangle(252, 400, 440, 156, 630, 400); g.fillStyle(0x72a878); g.fillTriangle(0, 418, 210, 226, 430, 418); g.fillStyle(0xf8f4e7); g.fillRect(438, 228, 212, 128); g.fillTriangle(414, 228, 544, 132, 674, 228); g.fillStyle(0x3a6960); for (let x = 464; x < 630; x += 42) g.fillRect(x, 258, 20, 42); g.lineStyle(7, 0xf8f4e7); g.lineBetween(544, 132, 544, 82); g.lineBetween(526, 105, 562, 105); }
+  FR(g, S, 0, 0, W, H); g.fillStyle(L, .78); g.fillCircle(sun, 152, 58); g.fillStyle(0xffffff, .32); for (let k = 0; k < 3; k++) g.fillEllipse(48 + (k * 247 + id * 61) % 690, 105 + (k & 1) * 46, 118, 24);
+  FR(g, I, 0, 0, W, 84); FR(g, C, 0, 80, W, 4);
+  if (id === 0) { g.fillStyle(0x668cab); g.fillTriangle(0, 400, 180, 122, 365, 400); g.fillTriangle(250, 400, 485, 164, 720, 400); g.fillStyle(0xf5f6f1); g.fillTriangle(132, 195, 180, 122, 228, 195); g.fillTriangle(430, 220, 485, 164, 540, 220); g.lineStyle(4, 0xc84c50); g.lineBetween(42, 255, 412, 184); FR(g, 0xc84c50, 214, 196, 38, 22); }
+  else if (id === 1) { FR(g, 0x58727a, 562, 110, 108, 292); g.fillStyle(0xd0f1ed); for (let y = 132; y < 380; y += 30) g.fillRect(580, y, 72, 11); FR(g, 0x5d9c82, 0, 350, W, 62); FR(g, 0x2b5554, 90, 312, 220, 42); }
+  else if (id === 2) { FR(g, 0x83bfda, 0, 336, W, 116); g.fillStyle(0xffffff, .58); for (let y = 358; y < 440; y += 24) g.fillRect(0, y, W, 5); g.fillStyle(0xefede3); g.fillTriangle(355, 412, 432, 412, 408, 104); g.fillStyle(0xcfcfc5); g.fillTriangle(408, 104, 432, 412, 408, 412); FR(g, 0xb9614f, 0, 428, W, 24); }
+  else if (id === 3) { FR(g, 0xffd46d, 0, 84, W, GR - 84); g.fillStyle(0xffe676, .88); g.fillCircle(612, 158, 86); g.fillStyle(0xffffff, .28); g.fillEllipse(144, 152, 154, 22); g.fillEllipse(272, 194, 108, 18); g.fillStyle(0xc94f5a); g.fillTriangle(0, 466, 402, 286, 800, 466); g.lineStyle(4, 0xf7dd7c, .7); for (let x = 38; x < W; x += 108) g.lineBetween(402, 300, x, 458); g.fillStyle(0x7b8580); for (let x = 20; x < W; x += 64) g.fillRect(x, 304 + (x % 3) * 11, 42, 102); FR(g, 0xb66742, 480, 382, 98, 15); g.fillRect(490, 368, 78, 14); FR(g, 0xf8efc9, 518, 174, 22, 194); g.fillRect(506, 204, 46, 14); g.fillStyle(0xf3c94d); g.fillCircle(529, 108, 8); g.fillTriangle(529, 116, 518, 150, 540, 150); g.fillStyle(0xfff1a8); g.fillTriangle(524, 122, 474, 108, 521, 145); g.fillTriangle(534, 122, 584, 108, 537, 145); FR(g, 0x263b45, 45, 334, 250, 64); FR(g, 0xc94f5a, 55, 343, 230, 41); g.fillStyle(0xf8efc9); for (let x = 69; x < 268; x += 32) g.fillRect(x, 350, 19, 13); g.fillStyle(0x263b45); g.fillCircle(85, 394, 10); g.fillCircle(253, 394, 10); g.fillStyle(0xc94f5a); g.fillCircle(72, 312, 21); g.lineStyle(4, 0xf8efc9); g.lineBetween(59, 321, 59, 304); g.lineBetween(59, 304, 72, 318); g.lineBetween(72, 318, 85, 304); g.lineBetween(85, 304, 85, 321); }
+  else if (id === 4) { g.fillStyle(0x4d8961); g.fillTriangle(0, 400, 184, 104, 370, 400); g.fillTriangle(252, 400, 440, 156, 630, 400); g.fillStyle(0x72a878); g.fillTriangle(0, 418, 210, 226, 430, 418); FR(g, 0xf8f4e7, 438, 228, 212, 128); g.fillTriangle(414, 228, 544, 132, 674, 228); g.fillStyle(0x3a6960); for (let x = 464; x < 630; x += 42) g.fillRect(x, 258, 20, 42); g.lineStyle(7, 0xf8f4e7); g.lineBetween(544, 132, 544, 82); g.lineBetween(526, 105, 562, 105); }
   else if (id === 5) { g.fillStyle(0x3e865c); g.fillTriangle(0, 396, 190, 152, 415, 252); g.fillTriangle(270, 396, 515, 126, 800, 382); g.fillStyle(0x5fa169); g.fillTriangle(0, 424, 235, 256, 500, 424); g.lineStyle(9, 0x315c49); for (let x = 100; x < W; x += 220) { g.lineBetween(x, 426, x, 318); g.lineBetween(x, 332, x - 35, 300); g.lineBetween(x, 332, x + 38, 302); } }
-  else if (id === 6) { g.fillStyle(0xf0cc5b); g.fillRect(486, 132, 224, 250); g.fillStyle(0xf7edd0); for (let y = 154; y < 338; y += 42) g.fillRect(510, y, 176, 22); g.fillStyle(0x326b84); g.fillRect(532, 154, 36, 160); g.fillRect(622, 154, 36, 160); banana(g, 238, 236, 82, 22); }
-  else if (id === 7) { g.fillStyle(0xf8f3e6); g.fillRect(174, 108, 452, 298); g.lineStyle(5, 0xc84c50); g.strokeRect(174, 108, 452, 298); g.fillStyle(0xc84c50); for (let y = 145; y < 280; y += 38) g.fillRect(208, y, 152, 14); g.fillStyle(0xc84c50); g.fillCircle(500, 250, 90); g.fillStyle(0xf8f3e6); g.fillCircle(500, 250, 66); g.lineStyle(8, 0x201a20); g.lineBetween(500, 250, 500, 198); g.lineBetween(500, 250, 544, 272); }
-  else { g.fillStyle(0x64adcb); g.fillRect(0, 340, W, 130); g.lineStyle(13, 0xd06d3f); g.lineBetween(0, 314, W, 314); for (const x of [214, 586]) { g.fillStyle(0xd06d3f); g.fillRect(x - 16, 130, 32, 214); g.lineStyle(7, 0xd06d3f); g.lineBetween(x - 54, 166, x + 54, 166); g.lineBetween(x - 16, 130, x - 76, 314); g.lineBetween(x + 16, 130, x + 76, 314); } }
-  g.fillStyle(F); g.fillRect(0, GR, W, H - GR); g.fillStyle(C); g.fillRect(0, GR, W, 7); for (let x = 24; x < W; x += 62) { g.fillStyle(L, .22); g.fillRect(x, GR + 34 + (x % 3) * 9, 30, 4); }
+  else if (id === 6) { FR(g, 0xf0cc5b, 486, 132, 224, 250); g.fillStyle(0xf7edd0); for (let y = 154; y < 338; y += 42) g.fillRect(510, y, 176, 22); FR(g, 0x326b84, 532, 154, 36, 160); g.fillRect(622, 154, 36, 160); banana(g, 238, 236, 82, 22); }
+  else if (id === 7) { FR(g, 0xf8f3e6, 174, 108, 452, 298); g.lineStyle(5, 0xc84c50); g.strokeRect(174, 108, 452, 298); g.fillStyle(0xc84c50); for (let y = 145; y < 280; y += 38) g.fillRect(208, y, 152, 14); g.fillStyle(0xc84c50); g.fillCircle(500, 250, 90); g.fillStyle(0xf8f3e6); g.fillCircle(500, 250, 66); g.lineStyle(8, 0x201a20); g.lineBetween(500, 250, 500, 198); g.lineBetween(500, 250, 544, 272); }
+  else { FR(g, 0x64adcb, 0, 340, W, 130); g.lineStyle(13, 0xd06d3f); g.lineBetween(0, 314, W, 314); for (const x of [214, 586]) { FR(g, 0xd06d3f, x - 16, 130, 32, 214); g.lineStyle(7, 0xd06d3f); g.lineBetween(x - 54, 166, x + 54, 166); g.lineBetween(x - 16, 130, x - 76, 314); g.lineBetween(x + 16, 130, x + 76, 314); } }
+  FR(g, F, 0, GR, W, H - GR); FR(g, C, 0, GR, W, 7); for (let x = 24; x < W; x += 62) { g.fillStyle(L, .22); g.fillRect(x, GR + 34 + (x % 3) * 9, 30, 4); }
 }
 
 function stageFx(g, id) {
@@ -902,10 +887,10 @@ function stageFx(g, id) {
 // ---------- Identidad: afiche de madrugada, no interfaz neón ----------
 const Y = 0xe5ad31, CY = 0x326b84, PK = 0xc94f5a, IV = 0x201a20, CR = 0xf2e3bf;
 function menuBg(g) {
-  g.fillStyle(CR); g.fillRect(0, 0, W, H); g.fillStyle(IV); g.fillTriangle(0, 0, 330, 0, 0, H); g.fillTriangle(W, 0, 470, 0, W, H);
+  FR(g, CR, 0, 0, W, H); g.fillStyle(IV); g.fillTriangle(0, 0, 330, 0, 0, H); g.fillTriangle(W, 0, 470, 0, W, H);
   g.fillStyle(PK, .82); g.fillRect(0, 472, W, 72); g.fillStyle(CY, .84); g.fillTriangle(145, 0, 400, 432, 655, 0);
   for (let i = 0; i < 13; i++) { g.fillStyle(IV, .12); g.fillCircle(46 + i * 58, 72 + (i % 3) * 26, 5 + i % 4); }
-  g.fillStyle(IV); g.fillRect(24, 20, 82, 4); g.fillRect(W - 106, 20, 82, 4); g.fillRect(0, H - 18, W, 6);
+  FR(g, IV, 24, 20, 82, 4); g.fillRect(W - 106, 20, 82, 4); g.fillRect(0, H - 18, W, 6);
 }
 
 // ---------- Pantalla: titulo ----------
@@ -917,7 +902,7 @@ function initTitle() {
   tx(W / 2, 92, 'CAMPEONATO DE LA DEMO', 13, '#201a20');
   tx(W / 2, 150, 'ÚLTIMA DEMO', 58, '#201a20').setShadow(4, 4, '#c94f5a', 0, false, true);
   tx(W / 2, 204, 'NO HAY PITCH SIN PELEA', 12, '#201a20');
-  g.fillStyle(IV); g.fillRect(178, 238, 440, 42); g.fillStyle(PK); g.fillRect(188, 244, 420, 30); g.fillStyle(IV); g.fillRect(198, 286, 400, 42); g.fillStyle(CY); g.fillRect(208, 292, 380, 30);
+  FR(g, IV, 178, 238, 440, 42); FR(g, PK, 188, 244, 420, 30); FR(g, IV, 198, 286, 400, 42); FR(g, CY, 208, 292, 380, 30);
   S.b1 = tx(W / 2, 258, 'START 1 · CAMPAÑA', 19, '#f2e3bf');
   S.b2 = tx(W / 2, 306, 'START 2 · VERSUS', 19, '#f2e3bf');
   tx(W / 2, 370, '7 CREDENCIALES · 7 CAMPEONES · 1 DEMO', 11, '#201a20');
@@ -935,7 +920,7 @@ function updTitle(dt) {
 // ---------- Pantalla: seleccion ----------
 function initSel() {
   const g = S.bg;
-  menuBg(g); g.fillStyle(IV); g.fillRect(92, 14, 616, 34); g.fillStyle(CR, .96); g.fillRect(40, 56, 320, 510); g.fillRect(440, 56, 320, 510); g.lineStyle(4, CY); g.strokeRect(40, 56, 320, 510); g.lineStyle(4, PK); g.strokeRect(440, 56, 320, 510);
+  menuBg(g); FR(g, IV, 92, 14, 616, 34); g.fillStyle(CR, .96); g.fillRect(40, 56, 320, 510); g.fillRect(440, 56, 320, 510); g.lineStyle(4, CY); g.strokeRect(40, 56, 320, 510); g.lineStyle(4, PK); g.strokeRect(440, 56, 320, 510);
   tx(W / 2, 32, 'MESA DE ACREDITACIONES · ELIGE TU CREDENCIAL', 13, '#f2e3bf');
   S.sel = [0, 1].map(i => {
     const s = { ph: i < S.np ? 0 : 9, t: i ? 6 : 4, cx: 200 + i * 400 };
@@ -1056,7 +1041,7 @@ function updCho() {
   const g = S.g; g.clear();
   for (let j = 0; j < 2; j++) {
     const on = j === S.cs;
-    g.fillStyle(on ? Y : 0x1a1a1a); g.fillRect(70 + j * 360, 250, 300, 150);
+    FR(g, on ? Y : 0x1a1a1a, 70 + j * 360, 250, 300, 150);
     g.lineStyle(2, Y, on ? 1 : .5); g.strokeRect(70 + j * 360, 250, 300, 150);
     S.co[j][0].setColor(on ? '#1a1a1a' : '#f2ff00'); S.co[j][1].setColor(on ? '#1a1a1a' : '#f2ff00').setAlpha(on ? 1 : .55);
   }
@@ -1079,8 +1064,8 @@ function initVs() {
   S.vsT = tx(W / 2, 290, 'VS', 64, '#ffffff');
   // Ficha de ronda impresa: tinta azul, roja y papel, sin el marco neón anterior.
   const g = S.bg;
-  g.fillStyle(CY); g.fillRect(0, 0, 18, H); g.fillStyle(PK); g.fillRect(W - 18, 0, 18, H); g.fillStyle(CR); g.fillRect(28, 516, W - 56, 70); g.fillStyle(IV); g.fillRect(38, 526, W - 76, 50);
-  for (let y = 74; y < 490; y += 58) { g.fillStyle(PK); g.fillRect(8, y, 10, 24); g.fillStyle(CY); g.fillRect(W - 18, y + 24, 10, 24); }
+  FR(g, CY, 0, 0, 18, H); FR(g, PK, W - 18, 0, 18, H); FR(g, CR, 28, 516, W - 56, 70); FR(g, IV, 38, 526, W - 76, 50);
+  for (let y = 74; y < 490; y += 58) { FR(g, PK, 8, y, 10, 24); FR(g, CY, W - 18, y + 24, 10, 24); }
   tx(W / 2, 544, 'RONDA DE DEMO · A 2 DE 3 CAÍDAS', 22, '#f2e3bf');
   tx(W / 2, 570, 'ESCENARIO: ' + SN[S.stage], 12, '#f2e3bf');
 }
@@ -1193,7 +1178,7 @@ function drawFight(dt) {
   const [a, b] = S.F;
   const g = S.g; g.clear();
   stageFx(g, S.stage);
-  for (const w of S.walls) { g.fillStyle(0x6d4c2f); g.fillRect(w.x - 14, GR - 105, 6, 105); g.fillRect(w.x + 8, GR - 105, 6, 105); g.fillStyle(0x8d6e4f); for (let y = GR - 98; y < GR; y += 20) g.fillRect(w.x - 14, y, 28, 7); }
+  for (const w of S.walls) { FR(g, 0x6d4c2f, w.x - 14, GR - 105, 6, 105); g.fillRect(w.x + 8, GR - 105, 6, 105); g.fillStyle(0x8d6e4f); for (let y = GR - 98; y < GR; y += 20) g.fillRect(w.x - 14, y, 28, 7); }
   for (const f of S.F) { g.fillStyle(0xfff6d0, .14); g.fillEllipse(f.x, GR + 4, 190, 30); } // círculo de luz bajo cada luchador
   // viñeta de manga: en golpes fuertes y KO el fondo se vuelve papel con líneas de velocidad hacia el impacto
   if (S.sl > 0) {
@@ -1202,32 +1187,32 @@ function drawFight(dt) {
   }
   drawF(g, b, b.x, b.y, 1.15); drawF(g, a, a.x, a.y, 1.15); codeRain(g, a); codeRain(g, b);
   for (const p of S.pr) drawP(g, p);
-  for (let i = S.pa.length - 1; i >= 0; i--) { const q = S.pa[i]; q.l -= dt; q.vy += 900 * dt; q.x += q.vx * dt; q.y += q.vy * dt; if (q.l <= 0) S.pa.splice(i, 1); else { g.fillStyle(q.c); g.fillRect(q.x - 3, q.y - 3, 6, 6); } }
-  for (let i = S.imp.length - 1; i >= 0; i--) { const q = S.imp[i], z = 14 * q.s * (q.l / .12 + .4); q.l -= dt || .016; if (q.l <= 0) { S.imp.splice(i, 1); continue; } g.fillStyle(0xffffff); g.fillRect(q.x - z * 1.6, q.y - 3, z * 3.2, 6); g.fillRect(q.x - 3, q.y - z * 1.6, 6, z * 3.2); g.fillStyle(0xffe066); g.fillRect(q.x - z / 2, q.y - z / 2, z, z); }
+  for (let i = S.pa.length - 1; i >= 0; i--) { const q = S.pa[i]; q.l -= dt; q.vy += 900 * dt; q.x += q.vx * dt; q.y += q.vy * dt; if (q.l <= 0) S.pa.splice(i, 1); else { FR(g, q.c, q.x - 3, q.y - 3, 6, 6); } }
+  for (let i = S.imp.length - 1; i >= 0; i--) { const q = S.imp[i], z = 14 * q.s * (q.l / .12 + .4); q.l -= dt || .016; if (q.l <= 0) { S.imp.splice(i, 1); continue; } FR(g, 0xffffff, q.x - z * 1.6, q.y - 3, z * 3.2, 6); g.fillRect(q.x - 3, q.y - z * 1.6, 6, z * 3.2); FR(g, 0xffe066, q.x - z / 2, q.y - z / 2, z, z); }
   hud();
 }
 function hud() {
   const h = S.h; h.clear();
   for (let k = 0; k < 8; k++) { h.lineStyle(9, 0, .065); h.strokeRect(k * 9, k * 9, W - k * 18, H - k * 18); }
   h.fillStyle(0x070813, .72); h.fillRect(0, 0, W, 86); h.fillRect(0, 548, W, 52); h.fillRect(W - 330, 156, 320, 66);
-  h.fillStyle(PK); h.fillRect(364, 8, 16, 4); h.fillStyle(CY); h.fillRect(420, 8, 16, 4); h.fillStyle(CR); h.fillRect(384, 8, 32, 4);
+  FR(h, PK, 364, 8, 16, 4); FR(h, CY, 420, 8, 16, 4); FR(h, CR, 384, 8, 32, 4);
   S.F.forEach(f => {
     if (f.ghp > f.hp) f.ghp = _mx(f.hp, f.ghp - 35 * S.dt); else f.ghp = f.hp;
     const L = f.i === 0, x0 = L ? 30 : 450, w = 320, gw = w * f.ghp / 100, hw = w * f.hp / 100;
     const tc = TEAMS[f.t].col, ac = TEAMS[f.t].ac;
-    h.fillStyle(0x000000); h.fillRect(x0 - 3, 15, w + 6, 24);
-    h.fillStyle(0x311320); h.fillRect(x0, 18, w, 18);
-    h.fillStyle(lerpC(tc, 0xffffff, .58)); h.fillRect(L ? x0 + w - gw : x0, 18, gw, 18);
-    h.fillStyle(f.hp > 30 ? tc : 0xff5050); h.fillRect(L ? x0 + w - hw : x0, 18, hw, 18);
+    FR(h, 0x000000, x0 - 3, 15, w + 6, 24);
+    FR(h, 0x311320, x0, 18, w, 18);
+    FR(h, lerpC(tc, 0xffffff, .58), L ? x0 + w - gw : x0, 18, gw, 18);
+    FR(h, f.hp > 30 ? tc : 0xff5050, L ? x0 + w - hw : x0, 18, hw, 18);
     h.fillStyle(0xffffff, .4); h.fillRect(L ? x0 + w - hw : x0, 20, hw, 4); h.fillStyle(0, .25); h.fillRect(L ? x0 + w - hw : x0, 32, hw, 4);
     for (let k = 0; k < 2; k++) { h.fillStyle(k < f.wins ? 0xffd400 : 0x333333); h.fillCircle(L ? x0 + w - 10 - k * 18 : x0 + 10 + k * 18, 50, 6); }
     const mx = L ? 30 : 570;
-    h.fillStyle(0x000000); h.fillRect(mx - 2, 556, 204, 14);
-    h.fillStyle(f.m >= 100 ? (S.T * 8 % 2 < 1 ? ac : 0xffffff) : lerpC(tc, 0x4fe7ff, .35)); h.fillRect(mx, 558, 200 * f.m / 100, 10);
+    FR(h, 0x000000, mx - 2, 556, 204, 14);
+    FR(h, f.m >= 100 ? (S.T * 8 % 2 < 1 ? ac : 0xffffff) : lerpC(tc, 0x4fe7ff, .35), mx, 558, 200 * f.m / 100, 10);
     for (let k = 0; k < 2; k++) {
       const cx = L ? 250 + k * 22 : 530 - k * 22, r = _mx(0, f.cd[k]) / (k ? 4.5 : 2.2);
-      h.fillStyle(0x000000); h.fillRect(cx - 9, 551, 18, 24);
-      h.fillStyle(f.sil > 0 ? 0x555555 : r > 0 ? 0x34495e : 0x2ecc71); h.fillRect(cx - 7, 553 + 20 * r, 14, 20 * (1 - r));
+      FR(h, 0x000000, cx - 9, 551, 18, 24);
+      FR(h, f.sil > 0 ? 0x555555 : r > 0 ? 0x34495e : 0x2ecc71, cx - 7, 553 + 20 * r, 14, 20 * (1 - r));
     }
   });
   S.tt.setText(String(Math.ceil(_mx(0, S.time)))).setColor(S.time < 10 ? '#ff5050' : '#ffffff');
